@@ -1,0 +1,1896 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Marketing Master Hub</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        body {
+            background-color: #f8fafc;
+            color: #0f172a;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            overflow-x: hidden;
+        }
+        
+        .radar-container { position: relative; width: 100%; max-width: 500px; margin: 0 auto; height: 350px; }
+        .doughnut-container { position: relative; width: 100%; max-width: 180px; margin: 0 auto; height: 180px; }
+
+        .nav-btn { transition: all 0.2s ease; border-left: 3px solid transparent; }
+        .nav-btn.active {
+            background-color: #e0e7ff; 
+            border-left-color: #4f46e5; 
+            color: #312e81; 
+            font-weight: 700;
+        }
+        
+        /* Sub-navigation for L1-L7 */
+        .sub-nav-btn { transition: all 0.2s ease; border-left: 3px solid transparent; }
+        .sub-nav-btn:hover { background-color: #f1f5f9; }
+
+        .app-view { display: none; opacity: 0; transition: opacity 0.3s ease; }
+        .app-view.active-view { display: block; opacity: 1; animation: fadeIn 0.4s ease-in-out; }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .step-checkbox {
+            appearance: none; width: 1.5rem; height: 1.5rem; border: 2px solid #cbd5e1;
+            border-radius: 0.375rem; cursor: pointer; position: relative;
+            transition: all 0.2s ease; background-color: white; flex-shrink: 0;
+        }
+        .step-checkbox:checked { background-color: #0f172a; border-color: #0f172a; }
+        .step-checkbox:checked::after {
+            content: '✓'; position: absolute; color: white; font-weight: bold;
+            font-size: 1rem; top: 50%; left: 50%; transform: translate(-50%, -50%);
+        }
+
+        .step-card { transition: all 0.3s ease; }
+        .step-card.completed { opacity: 0.6; background-color: #f1f5f9; border-color: #e2e8f0; }
+
+        .lab-content {
+            max-height: 0; overflow: hidden; transition: max-height 0.5s ease-in-out, padding 0.3s ease; opacity: 0;
+        }
+        .lab-content.open { max-height: 4000px; padding-top: 1.5rem; padding-bottom: 1.5rem; opacity: 1; }
+
+        .copy-btn { transition: all 0.2s ease; flex-shrink: 0; }
+        .copy-btn.copied { background-color: #10b981; color: white; border-color: #10b981; }
+        
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #f8fafc; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
+</head>
+<body class="flex flex-col lg:flex-row min-h-screen">
+
+    <!-- Mobile Header -->
+    <div class="lg:hidden bg-slate-900 text-white p-4 sticky top-0 z-50 flex justify-between items-center shadow-md">
+        <div class="font-bold text-lg">AI Master Hub</div>
+        <div class="flex items-center gap-3">
+            <span class="text-xs bg-slate-800 px-2 py-1 rounded-full"><span id="mobile-progress-text">0</span>%</span>
+            <button id="mobile-menu-btn" class="text-2xl cursor-pointer bg-slate-800 w-8 h-8 flex items-center justify-center rounded">☰</button>
+        </div>
+    </div>
+
+    <!-- Mobile Overlay -->
+    <div id="mobile-overlay" class="fixed inset-0 bg-slate-900 bg-opacity-50 z-40 hidden transition-opacity duration-300 opacity-0 lg:hidden"></div>
+
+    <!-- Sidebar Navigation -->
+    <aside id="sidebar" class="fixed inset-y-0 left-0 z-50 w-4/5 max-w-sm lg:w-80 bg-white border-r border-slate-200 flex flex-col overflow-y-auto transform -translate-x-full lg:translate-x-0 lg:static lg:h-screen transition-transform duration-300 shadow-2xl lg:shadow-none">
+        
+        <!-- Branding & Chart -->
+        <div class="p-6 border-b border-slate-100 flex-shrink-0">
+            <h1 class="text-2xl font-extrabold text-slate-800 tracking-tight mb-1">Growth<span class="text-indigo-600">Arch</span></h1>
+            <p class="text-xs font-semibold text-slate-500 uppercase tracking-widest bg-indigo-50 inline-block px-2 py-1 rounded text-indigo-700 mt-1 border border-indigo-100">Simulator</p>
+            
+            <div class="bg-slate-50 rounded-xl p-4 mt-6 border border-slate-200 text-center">
+                <div class="doughnut-container">
+                    <canvas id="progressChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Scrollable Navigation -->
+        <div class="p-4 flex-grow overflow-y-auto">
+            
+            <!-- Main Menu -->
+            <div class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2 px-2">Main Menu</div>
+            <div class="flex flex-col gap-1 mb-6">
+                <button class="nav-btn active text-left py-2.5 px-3 rounded-lg text-slate-600 hover:bg-slate-100 font-medium w-full flex items-center gap-3" data-target="view-dashboard">
+                    <span class="text-lg w-6 text-center">📊</span> Dashboard
+                </button>
+                <button class="nav-btn text-left py-2.5 px-3 rounded-lg text-slate-600 hover:bg-slate-100 font-medium w-full flex items-center gap-3" data-target="view-syllabus">
+                    <span class="text-lg w-6 text-center">📚</span> Course Syllabus
+                </button>
+                <button class="nav-btn text-left py-2.5 px-3 rounded-lg text-slate-600 hover:bg-slate-100 font-medium w-full flex items-center gap-3" data-target="view-notebooklm">
+                    <span class="text-lg w-6 text-center">📓</span> NotebookLM Mastery
+                </button>
+                <button class="nav-btn text-left py-2.5 px-3 rounded-lg text-slate-600 hover:bg-slate-100 font-medium w-full flex items-center gap-3" data-target="view-career">
+                    <span class="text-lg w-6 text-center">🚀</span> Career Trajectory
+                </button>
+                <button class="nav-btn text-left py-2.5 px-3 rounded-lg text-slate-600 hover:bg-slate-100 font-medium w-full flex items-center gap-3" data-target="view-glossary">
+                    <span class="text-lg w-6 text-center">📖</span> Tech Glossary
+                </button>
+                <button class="nav-btn text-left py-2.5 px-3 rounded-lg text-slate-600 hover:bg-slate-100 font-medium w-full flex items-center gap-3" data-target="view-resources">
+                    <span class="text-lg w-6 text-center">🎓</span> Elite Library
+                </button>
+            </div>
+
+            <!-- L1-L7 Roadmap Links (Matches User Screenshot precisely) -->
+            <div class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2 px-2">Training Roadmap</div>
+            <div class="flex flex-col gap-1 mb-6">
+                <!-- Ensure these click to the Roadmap view AND scroll to the phase -->
+                <button class="sub-nav-btn text-left py-2 px-3 rounded-lg text-slate-600 w-full flex items-center justify-between" data-target="view-roadmap" data-scroll="phase-1">
+                    <span class="text-sm font-medium flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-green-500"></span> L1: Novice Foundations</span>
+                    <span class="text-xs bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full font-bold progress-badge" data-phase="phase1">0%</span>
+                </button>
+                <button class="sub-nav-btn text-left py-2 px-3 rounded-lg text-slate-600 w-full flex items-center justify-between" data-target="view-roadmap" data-scroll="phase-2">
+                    <span class="text-sm font-medium flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-yellow-400"></span> L2: Intermediate AI</span>
+                    <span class="text-xs bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full font-bold progress-badge" data-phase="phase2">0%</span>
+                </button>
+                <button class="sub-nav-btn text-left py-2 px-3 rounded-lg text-slate-600 w-full flex items-center justify-between" data-target="view-roadmap" data-scroll="phase-3">
+                    <span class="text-sm font-medium flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-orange-500"></span> L3: Advanced Data/QA</span>
+                    <span class="text-xs bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full font-bold progress-badge" data-phase="phase3">0%</span>
+                </button>
+                <button class="sub-nav-btn text-left py-2 px-3 rounded-lg text-slate-600 w-full flex items-center justify-between" data-target="view-roadmap" data-scroll="phase-4">
+                    <span class="text-sm font-medium flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-purple-500"></span> L4: Expert Architecture</span>
+                    <span class="text-xs bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full font-bold progress-badge" data-phase="phase4">0%</span>
+                </button>
+                <button class="sub-nav-btn text-left py-2 px-3 rounded-lg text-slate-600 w-full flex items-center justify-between" data-target="view-roadmap" data-scroll="phase-5">
+                    <span class="text-sm font-medium flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-red-600"></span> L5: Cognitive Prompting</span>
+                    <span class="text-xs bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full font-bold progress-badge" data-phase="phase5">0%</span>
+                </button>
+                <button class="sub-nav-btn text-left py-2 px-3 rounded-lg text-slate-600 w-full flex items-center justify-between" data-target="view-roadmap" data-scroll="phase-6">
+                    <span class="text-sm font-medium flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-blue-600"></span> L6: Enterprise Labs</span>
+                    <span class="text-xs bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full font-bold progress-badge" data-phase="phase6">0%</span>
+                </button>
+                <button class="sub-nav-btn text-left py-2 px-3 rounded-lg text-slate-600 w-full flex items-center justify-between" data-target="view-roadmap" data-scroll="phase-7">
+                    <span class="text-sm font-medium flex items-center gap-2"><span class="w-3 h-3 rounded-full bg-slate-900"></span> L7: Elite Operations</span>
+                    <span class="text-xs bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full font-bold progress-badge" data-phase="phase7">0%</span>
+                </button>
+            </div>
+
+            <!-- Extras -->
+            <button class="nav-btn text-left py-2.5 px-3 rounded-lg text-slate-600 hover:bg-slate-100 font-medium w-full flex items-center gap-3" data-target="view-questions">
+                <span class="text-lg w-6 text-center text-red-600 font-bold">?</span> Strategy Questions
+            </button>
+            
+        </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 p-4 sm:p-8 lg:p-12 overflow-y-auto w-full max-w-5xl mx-auto scroll-smooth pb-24">
+        
+        <!-- ========================================== -->
+        <!-- VIEW 1: DASHBOARD OVERVIEW -->
+        <!-- ========================================== -->
+        <div id="view-dashboard" class="app-view active-view">
+            <div class="mb-10">
+                <h2 class="text-4xl font-black text-slate-800 mb-3">Premium Curriculum Dashboard</h2>
+                <p class="text-lg text-slate-600">Your path from displaced worker to AI-Empowered Marketing Architect.</p>
+            </div>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10">
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                    <h3 class="text-xl font-bold text-slate-800 mb-2">Skill Evolution</h3>
+                    <p class="text-sm text-slate-500 mb-4">Visualizing the transition from manual execution to AI architecture.</p>
+                    <div class="radar-container">
+                        <canvas id="radarChart"></canvas>
+                    </div>
+                </div>
+                
+                <div class="flex flex-col justify-center gap-6">
+                    <div class="bg-indigo-50 border-l-4 border-indigo-600 p-6 rounded-r-xl">
+                        <h4 class="text-lg font-bold text-indigo-900 mb-2">The Ultimate Goal</h4>
+                        <p class="text-indigo-800 text-sm leading-relaxed">
+                            Employers don't hire people who just know how to "click buttons" in Eloqua anymore. They hire <strong>Architects</strong>. By completing this optimized roadmap, Rain will prove she can leverage Premium AI to do the work of 3 people: Copywriter, Data Analyst, and Campaign Manager.
+                        </p>
+                    </div>
+                    <div class="bg-white border border-slate-200 p-6 rounded-xl shadow-sm">
+                        <h4 class="text-md font-bold text-slate-800 mb-4 flex items-center gap-2"><span>🛠️</span> Optimized Tech Stack</h4>
+                        <ul class="space-y-4 text-sm text-slate-700">
+                            <li class="flex gap-3 items-start">
+                                <span class="text-indigo-600 mt-0.5">✦</span>
+                                <div>
+                                    <strong class="text-slate-900">Google One AI Premium ($20/mo):</strong>
+                                    <p class="text-xs text-slate-500 mt-1">Unlocks Gemini Advanced. Essential for uploading raw CSV files and handling massive, complex marketing prompts.</p>
+                                </div>
+                            </li>
+                            <li class="flex gap-3 items-start">
+                                <span class="text-indigo-600 mt-0.5">✦</span>
+                                <div>
+                                    <strong class="text-slate-900">HubSpot / ActiveCampaign / Klaviyo:</strong>
+                                    <p class="text-xs text-slate-500 mt-1">The execution CRMs. Used in advanced sandbox laboratories for human-in-the-loop and predictive churn testing.</p>
+                                </div>
+                            </li>
+                            <li class="flex gap-3 items-start">
+                                <span class="text-indigo-600 mt-0.5">✦</span>
+                                <div>
+                                    <strong class="text-slate-900">Zapier / n8n (Free Tier):</strong>
+                                    <p class="text-xs text-slate-500 mt-1">For learning Expert-level cross-platform API integrations, webhook payloads, and automation middleware.</p>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- VIEW 2: COURSE SYLLABUS -->
+        <!-- ========================================== -->
+        <div id="view-syllabus" class="app-view">
+            <div class="mb-10">
+                <h2 class="text-4xl font-black text-slate-800 mb-3">Course Syllabus</h2>
+                <p class="text-lg text-slate-600">A detailed breakdown of the objectives, purposes, and core learnings across all 7 levels.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- L1 -->
+                <div class="bg-white border-t-4 border-green-500 rounded-xl shadow-sm p-6 flex flex-col h-full">
+                    <h3 class="text-xl font-bold text-slate-800 mb-2 flex items-center gap-2">
+                        <span class="w-6 h-6 rounded-full bg-green-500 text-white text-xs flex items-center justify-center shrink-0">L1</span>
+                        Novice Foundations
+                    </h3>
+                    <div class="flex-grow space-y-4 mt-4">
+                        <div>
+                            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">Objective</span>
+                            <p class="text-sm text-slate-700">Establish the fundamental AI and CRM ecosystem.</p>
+                        </div>
+                        <div>
+                            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">Purpose</span>
+                            <p class="text-sm text-slate-700">To transition from theoretical understanding to possessing a highly functional, safe testing environment ("sandbox").</p>
+                        </div>
+                        <div>
+                            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">What Will Be Learned</span>
+                            <ul class="list-disc pl-4 text-sm text-slate-700 space-y-1">
+                                <li>Provisioning developer sandbox instances.</li>
+                                <li>Connecting premium AI LLMs (Gemini Advanced).</li>
+                                <li>Constructing an AI knowledge base using NotebookLM.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- L2 -->
+                <div class="bg-white border-t-4 border-yellow-400 rounded-xl shadow-sm p-6 flex flex-col h-full">
+                    <h3 class="text-xl font-bold text-slate-800 mb-2 flex items-center gap-2">
+                        <span class="w-6 h-6 rounded-full bg-yellow-400 text-slate-900 text-xs flex items-center justify-center shrink-0">L2</span>
+                        Intermediate AI
+                    </h3>
+                    <div class="flex-grow space-y-4 mt-4">
+                        <div>
+                            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">Objective</span>
+                            <p class="text-sm text-slate-700">Master AI for basic content generation and workflow logic.</p>
+                        </div>
+                        <div>
+                            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">Purpose</span>
+                            <p class="text-sm text-slate-700">To eliminate manual list uploads, automate tasks, and overcome writer's block using Generative AI.</p>
+                        </div>
+                        <div>
+                            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">What Will Be Learned</span>
+                            <ul class="list-disc pl-4 text-sm text-slate-700 space-y-1">
+                                <li>Generating synthetic mock data.</li>
+                                <li>Dynamic audience segmentation vs. static lists.</li>
+                                <li>A/B testing matrix generation via AI prompting.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- L3 -->
+                <div class="bg-white border-t-4 border-orange-500 rounded-xl shadow-sm p-6 flex flex-col h-full">
+                    <h3 class="text-xl font-bold text-slate-800 mb-2 flex items-center gap-2">
+                        <span class="w-6 h-6 rounded-full bg-orange-500 text-white text-xs flex items-center justify-center shrink-0">L3</span>
+                        Advanced Data/QA
+                    </h3>
+                    <div class="flex-grow space-y-4 mt-4">
+                        <div>
+                            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">Objective</span>
+                            <p class="text-sm text-slate-700">Utilize AI for automated governance and deep statistical analysis.</p>
+                        </div>
+                        <div>
+                            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">Purpose</span>
+                            <p class="text-sm text-slate-700">To ensure corporate brand safety and extract actionable insights from raw data.</p>
+                        </div>
+                        <div>
+                            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">What Will Be Learned</span>
+                            <ul class="list-disc pl-4 text-sm text-slate-700 space-y-1">
+                                <li>Automated compliance auditing using custom context.</li>
+                                <li>Ingesting raw CSV files into LLMs.</li>
+                                <li>Identifying statistical anomalies in campaign performance.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- L4 -->
+                <div class="bg-white border-t-4 border-purple-500 rounded-xl shadow-sm p-6 flex flex-col h-full">
+                    <h3 class="text-xl font-bold text-slate-800 mb-2 flex items-center gap-2">
+                        <span class="w-6 h-6 rounded-full bg-purple-500 text-white text-xs flex items-center justify-center shrink-0">L4</span>
+                        Expert Architecture
+                    </h3>
+                    <div class="flex-grow space-y-4 mt-4">
+                        <div>
+                            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">Objective</span>
+                            <p class="text-sm text-slate-700">Build cross-platform integrations and defend the methodology.</p>
+                        </div>
+                        <div>
+                            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">Purpose</span>
+                            <p class="text-sm text-slate-700">To prove value as a strategic architect who connects disparate systems.</p>
+                        </div>
+                        <div>
+                            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">What Will Be Learned</span>
+                            <ul class="list-disc pl-4 text-sm text-slate-700 space-y-1">
+                                <li>Automation middleware basics (Zapier).</li>
+                                <li>API and webhook troubleshooting with AI assistance.</li>
+                                <li>Adversarial interview preparation and roleplay.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- L5 -->
+                <div class="bg-white border-t-4 border-red-600 rounded-xl shadow-sm p-6 flex flex-col h-full md:col-span-2 lg:col-span-1">
+                    <h3 class="text-xl font-bold text-slate-800 mb-2 flex items-center gap-2">
+                        <span class="w-6 h-6 rounded-full bg-red-600 text-white text-xs flex items-center justify-center shrink-0">L5</span>
+                        Cognitive Prompting
+                    </h3>
+                    <div class="flex-grow space-y-4 mt-4">
+                        <div>
+                            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">Objective</span>
+                            <p class="text-sm text-slate-700">Master advanced prompt engineering frameworks.</p>
+                        </div>
+                        <div>
+                            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">Purpose</span>
+                            <p class="text-sm text-slate-700">To move beyond superficial requests and force the AI to produce reliable, structurally complex marketing outputs.</p>
+                        </div>
+                        <div>
+                            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">What Will Be Learned</span>
+                            <ul class="list-disc pl-4 text-sm text-slate-700 space-y-1">
+                                <li>The DREAM Framework & XML Delimiters.</li>
+                                <li>Chain-of-Thought (CoT) and Step-Back Prompting.</li>
+                                <li>Cross-domain knowledge synthesis.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- L6 -->
+                <div class="bg-white border-t-4 border-blue-600 rounded-xl shadow-sm p-6 flex flex-col h-full md:col-span-2 lg:col-span-1">
+                    <h3 class="text-xl font-bold text-slate-800 mb-2 flex items-center gap-2">
+                        <span class="w-6 h-6 rounded-full bg-blue-600 text-white text-xs flex items-center justify-center shrink-0">L6</span>
+                        Enterprise Labs
+                    </h3>
+                    <div class="flex-grow space-y-4 mt-4">
+                        <div>
+                            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">Objective</span>
+                            <p class="text-sm text-slate-700">Execute complex, real-world simulations mirroring corporate tasks.</p>
+                        </div>
+                        <div>
+                            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">Purpose</span>
+                            <p class="text-sm text-slate-700">To build a tangible portfolio of high-level competencies that solve massive operational bottlenecks.</p>
+                        </div>
+                        <div>
+                            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">What Will Be Learned</span>
+                            <ul class="list-disc pl-4 text-sm text-slate-700 space-y-1">
+                                <li>Predictive churn analysis (Klaviyo/AI).</li>
+                                <li>"Human-in-the-loop" governance via API approval queues.</li>
+                                <li>Automated split-testing optimization protocols.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- L7 -->
+                <div class="bg-white border-t-4 border-slate-900 rounded-xl shadow-sm p-6 flex flex-col h-full md:col-span-2">
+                    <h3 class="text-xl font-bold text-slate-800 mb-2 flex items-center gap-2">
+                        <span class="w-6 h-6 rounded-full bg-slate-900 text-white text-xs flex items-center justify-center shrink-0">L7</span>
+                        Elite Operations
+                    </h3>
+                    <div class="flex-grow space-y-4 mt-4">
+                        <div>
+                            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">Objective</span>
+                            <p class="text-sm text-slate-700">Master technical infrastructure and omnichannel orchestration.</p>
+                        </div>
+                        <div>
+                            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">Purpose</span>
+                            <p class="text-sm text-slate-700">To become a highly valued "unicorn" marketer capable of managing the entire ecosystem.</p>
+                        </div>
+                        <div>
+                            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">What Will Be Learned</span>
+                            <ul class="list-disc pl-4 text-sm text-slate-700 space-y-1">
+                                <li>Deliverability engineering (SPF, DKIM, DMARC logic).</li>
+                                <li>Spam-trap identification using LLMs.</li>
+                                <li>Cross-platform harmonization (Translating long-form email into SMS/WhatsApp).</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- VIEW 3: STEP-BY-STEP ROADMAP (L1 - L7) -->
+        <!-- ========================================== -->
+        <div id="view-roadmap" class="app-view">
+            <div class="mb-10 text-center lg:text-left">
+                <h2 class="text-3xl sm:text-4xl font-black text-slate-800 mb-4">The Interactive Roadmap</h2>
+                <p class="text-slate-600 text-lg">Follow these exact instructions sequentially to build your AI sandbox environment.</p>
+            </div>
+
+            <div class="space-y-12">
+                <!-- L1: Novice Foundations -->
+                <section id="phase-1" class="relative pt-4">
+                    <div class="flex items-center gap-4 mb-6">
+                        <div class="w-10 h-10 rounded-full bg-green-500 text-white flex items-center justify-center font-bold text-lg z-10 shadow-md border-4 border-white shrink-0">L1</div>
+                        <h3 class="text-2xl font-bold text-slate-800">Novice Foundations</h3>
+                    </div>
+                    
+                    <div class="ml-5 border-l-2 border-slate-200 pl-4 sm:pl-8 space-y-6">
+                        <div class="step-card bg-white p-4 sm:p-6 rounded-xl border border-slate-200 shadow-sm flex gap-4">
+                            <div class="pt-1"><input type="checkbox" class="step-checkbox" data-phase="phase1"></div>
+                            <div class="w-full">
+                                <h4 class="font-bold text-lg text-slate-800 mb-2">Create a HubSpot Developer Sandbox</h4>
+                                <p class="text-slate-600 text-sm mb-3">We use a Developer account because it gives you free access to premium automation tools for testing purposes.</p>
+                                <ol class="list-decimal pl-5 text-sm text-slate-700 space-y-2">
+                                    <li>Go to <a href="https://developers.hubspot.com/" target="_blank" class="text-indigo-600 hover:underline">developers.hubspot.com</a>.</li>
+                                    <li>Click the orange button: <strong>"Create an app developer account"</strong>.</li>
+                                    <li>Sign up with your email. Once logged in, look for a section called <strong>"Test Accounts"</strong> on the left menu.</li>
+                                    <li>Click <strong>"Create app test account"</strong>. Name it "Rain's AI Sandbox".</li>
+                                    <li>Click into that new test account. This is your safe zone!</li>
+                                </ol>
+                            </div>
+                        </div>
+
+                        <div class="step-card bg-white p-4 sm:p-6 rounded-xl border border-slate-200 shadow-sm flex gap-4">
+                            <div class="pt-1"><input type="checkbox" class="step-checkbox" data-phase="phase1"></div>
+                            <div class="w-full">
+                                <h4 class="font-bold text-lg text-slate-800 mb-2">Activate Google One & Gemini Advanced</h4>
+                                <p class="text-slate-600 text-sm mb-3">This gives you access to the smartest AI models required for this training.</p>
+                                <ol class="list-decimal pl-5 text-sm text-slate-700 space-y-2">
+                                    <li>Go to <a href="https://one.google.com/" target="_blank" class="text-indigo-600 hover:underline">one.google.com</a>.</li>
+                                    <li>Upgrade to the <strong>AI Premium ($20/mo)</strong> plan.</li>
+                                    <li>Navigate to <a href="https://gemini.google.com/" target="_blank" class="text-indigo-600 hover:underline">gemini.google.com</a> and ensure it says <strong>"Gemini Advanced"</strong>.</li>
+                                </ol>
+                            </div>
+                        </div>
+
+                        <div class="step-card bg-white p-4 sm:p-6 rounded-xl border border-slate-200 shadow-sm flex gap-4">
+                            <div class="pt-1"><input type="checkbox" class="step-checkbox" data-phase="phase1"></div>
+                            <div class="w-full">
+                                <h4 class="font-bold text-lg text-slate-800 mb-2">Upload Your Knowledge (Build Your Brain)</h4>
+                                <ol class="list-decimal pl-5 text-sm text-slate-700 space-y-2 mb-4">
+                                    <li>Go to <a href="https://notebooklm.google.com/" target="_blank" class="text-indigo-600 hover:underline">notebooklm.google.com</a> and create a "New Notebook".</li>
+                                    <li>Click <strong>"Add Source"</strong> and upload:
+                                        <ul class="list-disc pl-5 mt-2 text-slate-500">
+                                            <li><strong>Doc 1: Brand Guidelines</strong></li>
+                                            <li><strong>Doc 2: Compliance Rules</strong></li>
+                                            <li><strong>Doc 3: Past Campaign Data</strong></li>
+                                        </ul>
+                                    </li>
+                                </ol>
+                                <div class="bg-slate-50 p-4 rounded-lg border border-slate-200">
+                                    <p class="text-xs font-bold text-slate-500 uppercase tracking-wide mb-1">Test Your Brain</p>
+                                    <div class="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+                                        <input type="text" readonly value="Based on our compliance rules, what words must I avoid when writing an email to dermatologists?" class="w-full bg-white border border-slate-300 rounded p-2 text-sm text-slate-600">
+                                        <button class="copy-btn bg-slate-800 text-white px-3 py-2 rounded text-sm hover:bg-slate-700 whitespace-nowrap" data-copy="Based on our compliance rules, what words must I avoid when writing an email to dermatologists?">Copy</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- L2: Intermediate AI -->
+                <section id="phase-2" class="relative pt-8">
+                    <div class="flex items-center gap-4 mb-6 border-t border-slate-200 pt-8">
+                        <div class="w-10 h-10 rounded-full bg-yellow-400 text-slate-900 flex items-center justify-center font-bold text-lg z-10 shadow-md border-4 border-white shrink-0">L2</div>
+                        <h3 class="text-2xl font-bold text-slate-800">Intermediate AI</h3>
+                    </div>
+                    
+                    <div class="ml-5 border-l-2 border-slate-200 pl-4 sm:pl-8 space-y-4">
+                        <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden step-card">
+                            <button class="lab-btn w-full text-left px-4 sm:px-6 py-4 flex justify-between items-center bg-slate-50 hover:bg-slate-100 transition-colors">
+                                <div class="flex items-center gap-3">
+                                    <span class="text-2xl">🧪</span>
+                                    <div>
+                                        <h4 class="font-bold text-slate-800">Lab 1: Dynamic List Segmentation</h4>
+                                        <p class="text-xs text-slate-500 font-normal">Learn to replace manual list uploads.</p>
+                                    </div>
+                                </div>
+                                <span class="text-2xl text-slate-400 transform transition-transform duration-300">▾</span>
+                            </button>
+                            <div class="lab-content bg-white px-4 sm:px-6 border-t border-slate-100">
+                                <div class="flex items-center gap-2 mb-4">
+                                    <input type="checkbox" class="step-checkbox" data-phase="phase2"> <span class="font-bold text-slate-700 text-sm">Mark Lab 1 Complete</span>
+                                </div>
+                                <h5 class="font-bold text-slate-800 mb-2">Step A: Generate Mock Data with Gemini</h5>
+                                <div class="flex flex-col sm:flex-row items-start gap-2 mb-6">
+                                    <textarea readonly class="w-full bg-slate-50 border border-slate-200 rounded p-3 text-sm text-slate-700 h-24 resize-none">Create a CSV table of 20 mock contacts. Columns: First Name, Last Name, Email, Job Title (make half of them 'Dermatologist' and half 'GP'), and 'Last Email Clicked Date' (make some recent, some blank).</textarea>
+                                    <button class="copy-btn bg-slate-200 text-slate-700 px-3 py-2 rounded text-sm hover:bg-slate-300" data-copy="Create a CSV table of 20 mock contacts. Columns: First Name, Last Name, Email, Job Title (make half of them 'Dermatologist' and half 'GP'), and 'Last Email Clicked Date' (make some recent, some blank).">Copy</button>
+                                </div>
+                                <h5 class="font-bold text-slate-800 mb-2">Step B: Import to HubSpot</h5>
+                                <ol class="list-decimal pl-5 text-sm text-slate-700 space-y-1 mb-6">
+                                    <li>Copy the table Gemini gives you and save as a `.csv` file.</li>
+                                    <li>In HubSpot, click <strong>Contacts</strong> -> <strong>Import</strong>.</li>
+                                </ol>
+                                <h5 class="font-bold text-slate-800 mb-2">Step C: Build an Active List</h5>
+                                <ol class="list-decimal pl-5 text-sm text-slate-700 space-y-1 mb-4">
+                                    <li>In HubSpot, go to <strong>Contacts</strong> -> <strong>Lists</strong>.</li>
+                                    <li>Click <strong>Create list</strong> -> <strong>Active List</strong>.</li>
+                                    <li>Set the filter: <em>Contact Property -> Job Title -> is equal to -> Dermatologist</em>.</li>
+                                    <li>Save the list.</li>
+                                </ol>
+                            </div>
+                        </div>
+
+                        <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden step-card">
+                            <button class="lab-btn w-full text-left px-4 sm:px-6 py-4 flex justify-between items-center bg-slate-50 hover:bg-slate-100 transition-colors">
+                                <div class="flex items-center gap-3">
+                                    <span class="text-2xl">🤖</span>
+                                    <div>
+                                        <h4 class="font-bold text-slate-800">Lab 2: The Automated Welcome Series</h4>
+                                        <p class="text-xs text-slate-500 font-normal">Replace the 6-month static setup with a workflow.</p>
+                                    </div>
+                                </div>
+                                <span class="text-2xl text-slate-400 transform transition-transform duration-300">▾</span>
+                            </button>
+                            <div class="lab-content bg-white px-4 sm:px-6 border-t border-slate-100">
+                                <div class="flex items-center gap-2 mb-4">
+                                    <input type="checkbox" class="step-checkbox" data-phase="phase2"> <span class="font-bold text-slate-700 text-sm">Mark Lab 2 Complete</span>
+                                </div>
+                                <h5 class="font-bold text-slate-800 mb-2">Step A: Write the Emails with AI</h5>
+                                <div class="flex flex-col sm:flex-row items-start gap-2 mb-6">
+                                    <textarea readonly class="w-full bg-slate-50 border border-slate-200 rounded p-3 text-sm text-slate-700 h-28 resize-none">Act as an expert B2B copywriter. Write a 3-part 'Welcome Series' email sequence for new Dermatologists joining our newsletter. 
+Email 1: Welcome and what to expect. 
+Email 2: Educational resource. 
+Email 3: Invitation to a webinar.
+Keep them under 150 words each. Professional but engaging.</textarea>
+                                    <button class="copy-btn bg-slate-200 text-slate-700 px-3 py-2 rounded text-sm hover:bg-slate-300" data-copy="Act as an expert B2B copywriter. Write a 3-part 'Welcome Series' email sequence for new Dermatologists joining our newsletter. Email 1: Welcome and what to expect. Email 2: Educational resource. Email 3: Invitation to a webinar. Keep them under 150 words each. Professional but engaging.">Copy</button>
+                                </div>
+                                <h5 class="font-bold text-slate-800 mb-2">Step B: Build the Workflow in HubSpot</h5>
+                                <ol class="list-decimal pl-5 text-sm text-slate-700 space-y-1 mb-4">
+                                    <li>In HubSpot, navigate to <strong>Automation</strong> -> <strong>Workflows</strong>.</li>
+                                    <li>Click <strong>Create workflow</strong> -> <strong>From scratch</strong> -> <strong>Contact-based</strong>.</li>
+                                    <li><strong>Set Enrollment Trigger:</strong> Select the "Dermatologist" list.</li>
+                                    <li>Click the <strong>+</strong> icon to add an action. Choose <strong>Send email</strong>.</li>
+                                    <li>Click the <strong>+</strong> icon again. Choose <strong>Delay</strong> -> Set to <em>2 Days</em>.</li>
+                                    <li>Repeat adding "Send Email" and "Delay" until all 3 emails are in the flow.</li>
+                                    <li>Click <strong>Review and publish</strong>.</li>
+                                </ol>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- L3: Advanced Data/QA -->
+                <section id="phase-3" class="relative pt-8">
+                    <div class="flex items-center gap-4 mb-6 border-t border-slate-200 pt-8">
+                        <div class="w-10 h-10 rounded-full bg-orange-500 text-white flex items-center justify-center font-bold text-lg z-10 shadow-md border-4 border-white shrink-0">L3</div>
+                        <h3 class="text-2xl font-bold text-slate-800">Advanced Data & QA</h3>
+                    </div>
+                    
+                    <div class="ml-5 border-l-2 border-slate-200 pl-4 sm:pl-8 space-y-4">
+                        <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden step-card">
+                            <button class="lab-btn w-full text-left px-4 sm:px-6 py-4 flex justify-between items-center bg-slate-50 hover:bg-slate-100 transition-colors">
+                                <div class="flex items-center gap-3">
+                                    <span class="text-2xl">⚖️</span>
+                                    <div>
+                                        <h4 class="font-bold text-slate-800">Lab 3.1: Brand Governance check</h4>
+                                        <p class="text-xs text-slate-500 font-normal">Use NotebookLM to QA your work.</p>
+                                    </div>
+                                </div>
+                                <span class="text-2xl text-slate-400 transform transition-transform duration-300">▾</span>
+                            </button>
+                            <div class="lab-content bg-white px-4 sm:px-6 border-t border-slate-100">
+                                 <div class="flex items-center gap-2 mb-4">
+                                    <input type="checkbox" class="step-checkbox" data-phase="phase3"> <span class="font-bold text-slate-700 text-sm">Mark Lab 3.1 Complete</span>
+                                </div>
+                                <p class="text-sm text-slate-600 mb-4">Go to your NotebookLM and paste the draft email into the chatbox along with this prompt:</p>
+                                <div class="flex flex-col sm:flex-row items-start gap-2 mb-6 ml-5">
+                                    <textarea readonly class="w-full bg-slate-50 border border-slate-200 rounded p-3 text-sm text-slate-700 h-20 resize-none">Please review the following email draft against our uploaded Brand Guidelines and Compliance rules. Flag any violations or tone inconsistencies:
+[PASTE DRAFT EMAIL HERE]</textarea>
+                                    <button class="copy-btn bg-slate-200 text-slate-700 px-3 py-2 rounded text-sm hover:bg-slate-300" data-copy="Please review the following email draft against our uploaded Brand Guidelines and Compliance rules. Flag any violations or tone inconsistencies:\n[PASTE DRAFT EMAIL HERE]">Copy</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden step-card">
+                            <button class="lab-btn w-full text-left px-4 sm:px-6 py-4 flex justify-between items-center bg-slate-50 hover:bg-slate-100 transition-colors">
+                                <div class="flex items-center gap-3">
+                                    <span class="text-2xl">📈</span>
+                                    <div>
+                                        <h4 class="font-bold text-slate-800">Lab 3.2: Deep Data CSV Analysis</h4>
+                                        <p class="text-xs text-slate-500 font-normal">Use Gemini Advanced to analyze raw spreadsheets.</p>
+                                    </div>
+                                </div>
+                                <span class="text-2xl text-slate-400 transform transition-transform duration-300">▾</span>
+                            </button>
+                            <div class="lab-content bg-white px-4 sm:px-6 border-t border-slate-100">
+                                 <div class="flex items-center gap-2 mb-4">
+                                    <input type="checkbox" class="step-checkbox" data-phase="phase3"> <span class="font-bold text-slate-700 text-sm">Mark Lab 3.2 Complete</span>
+                                </div>
+                                <ol class="list-decimal pl-5 text-sm text-slate-700 space-y-3 mb-6">
+                                    <li>Create a messy spreadsheet of mock 'Past Campaign Results' (include columns for Opens, Clicks, Bounces).</li>
+                                    <li>Upload the file directly into Gemini Advanced using the attachment icon.</li>
+                                    <li>Ask it to find the correlation using the prompt below.</li>
+                                </ol>
+                                <div class="flex flex-col sm:flex-row items-start gap-2 mb-6">
+                                    <textarea readonly class="w-full bg-slate-50 border border-slate-200 rounded p-3 text-sm text-slate-700 h-20 resize-none">[Attach CSV File] Act as a Senior Data Scientist. Analyze this campaign performance CSV. Identify the top 3 performing segments, find anomalies in bounce rates, and suggest 2 workflow triggers.</textarea>
+                                    <button class="copy-btn bg-slate-200 text-slate-700 px-3 py-2 rounded text-sm hover:bg-slate-300" data-copy="[Attach CSV File] Act as a Senior Data Scientist. Analyze this campaign performance CSV. Identify the top 3 performing segments, find anomalies in bounce rates, and suggest 2 workflow triggers.">Copy</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- L4: Expert Architecture -->
+                <section id="phase-4" class="relative pt-8">
+                    <div class="flex items-center gap-4 mb-6 border-t border-slate-200 pt-8">
+                        <div class="w-10 h-10 rounded-full bg-purple-500 text-white flex items-center justify-center font-bold text-lg z-10 shadow-md border-4 border-white shrink-0">L4</div>
+                        <h3 class="text-2xl font-bold text-slate-800">Expert Architecture</h3>
+                    </div>
+                    
+                    <div class="ml-5 border-l-2 border-slate-200 pl-4 sm:pl-8 space-y-6">
+                        <div class="step-card bg-white p-4 sm:p-6 rounded-xl border border-slate-200 shadow-sm flex gap-4">
+                            <div class="pt-1"><input type="checkbox" class="step-checkbox" data-phase="phase4"></div>
+                            <div class="w-full">
+                                <h4 class="font-bold text-lg text-slate-800 mb-2">The Capstone Ecosystem (HubSpot + Zapier)</h4>
+                                <p class="text-slate-600 text-sm mb-3">Employers want 'Integration Experts'. Use a Free Zapier account to connect HubSpot to an outside tool using AI to write the logic.</p>
+                                <ol class="list-decimal pl-5 text-sm text-slate-700 space-y-2 mb-4">
+                                    <li>Sign up for a free <a href="https://zapier.com" target="_blank" class="text-indigo-600 hover:underline">Zapier</a> account.</li>
+                                    <li>Build an automation: When a contact is added to a HubSpot list, log them in a Google Sheet.</li>
+                                </ol>
+                                <div class="flex flex-col sm:flex-row items-start gap-2">
+                                    <textarea readonly class="w-full bg-slate-50 border border-slate-200 rounded p-3 text-sm text-slate-700 h-20 resize-none">I am trying to connect HubSpot to Google Sheets using Zapier. My trigger is 'New Contact in List'. I am getting an error mapping the 'Email' field. Give me a step-by-step troubleshooting checklist.</textarea>
+                                    <button class="copy-btn bg-slate-200 text-slate-700 px-3 py-2 rounded text-sm hover:bg-slate-300" data-copy="I am trying to connect HubSpot to Google Sheets using Zapier. My trigger is 'New Contact in List'. I am getting an error mapping the 'Email' field. Give me a step-by-step troubleshooting checklist.">Copy</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="step-card bg-white p-4 sm:p-6 rounded-xl border border-slate-200 shadow-sm flex gap-4">
+                            <div class="pt-1"><input type="checkbox" class="step-checkbox" data-phase="phase4"></div>
+                            <div class="w-full">
+                                <h4 class="font-bold text-lg text-slate-800 mb-2">Interview Prep: Defending AI in Marketing</h4>
+                                <ol class="list-decimal pl-5 text-sm text-slate-700 space-y-2 mb-4">
+                                    <li>Use Gemini Advanced's voice feature to simulate a hostile job interview.</li>
+                                </ol>
+                                <div class="flex flex-col sm:flex-row items-start gap-2">
+                                    <textarea readonly class="w-full bg-slate-50 border border-slate-200 rounded p-3 text-sm text-slate-700 h-20 resize-none">Act as a skeptical Hiring Manager. I am interviewing for an Email Marketing role. You see AI on my resume. Ask me 3 tough questions challenging if I actually know marketing. Do not hold back.</textarea>
+                                    <button class="copy-btn bg-slate-200 text-slate-700 px-3 py-2 rounded text-sm hover:bg-slate-300" data-copy="Act as a skeptical Hiring Manager. I am interviewing for an Email Marketing role. You see AI on my resume. Ask me 3 tough questions challenging if I actually know marketing. Do not hold back.">Copy</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- L5: Cognitive Prompting -->
+                <section id="phase-5" class="relative pt-8">
+                    <div class="flex items-center gap-4 mb-6 border-t border-slate-200 pt-8">
+                        <div class="w-10 h-10 rounded-full bg-red-600 text-white flex items-center justify-center font-bold text-lg z-10 shadow-md border-4 border-white shrink-0">L5</div>
+                        <h3 class="text-2xl font-bold text-slate-800">Cognitive Prompt Engineering</h3>
+                    </div>
+                    <p class="text-slate-600 text-sm ml-12 mb-6">Moving beyond superficial, one-line requests is essential for producing reliable, brand-aligned, and structurally complex marketing materials.</p>
+                    
+                    <div class="ml-5 border-l-2 border-slate-200 pl-4 sm:pl-8 space-y-6">
+                        <div class="step-card bg-white p-4 sm:p-6 rounded-xl border border-slate-200 shadow-sm flex gap-4">
+                            <div class="pt-1"><input type="checkbox" class="step-checkbox" data-phase="phase5"></div>
+                            <div class="w-full">
+                                <h4 class="font-bold text-lg text-slate-800 mb-2">Structural Directives (DREAM Framework)</h4>
+                                <p class="text-slate-600 text-sm mb-3">Utilize the <strong>DREAM framework</strong> (Describe, Refine, Establish, Add, Make) along with XML-style tags to parse complex instructions.</p>
+                                <ol class="list-decimal pl-5 text-sm text-slate-700 space-y-2 mb-4">
+                                    <li><strong>Describe</strong> the objective.</li>
+                                    <li><strong>Refine</strong> the audience.</li>
+                                    <li><strong>Establish</strong> tone.</li>
+                                    <li><strong>Add</strong> references (Few-Shot).</li>
+                                    <li><strong>Make</strong> the request (format limits).</li>
+                                </ol>
+                                <div class="bg-slate-50 p-4 rounded-lg border border-slate-200">
+                                    <p class="text-xs font-bold text-slate-500 uppercase tracking-wide mb-1">DREAM Framework Prompt</p>
+                                    <div class="flex flex-col sm:flex-row items-start gap-2">
+                                        <textarea readonly class="w-full bg-white border border-slate-300 rounded p-2 text-xs text-slate-700 h-32 resize-none font-mono"><objective>Draft a promotional email.</objective>
+<refine_audience>B2B Pharmaceutical procurement officers.</refine_audience>
+<establish_tone>Authoritative, strictly adhering to corporate compliance.</establish_tone>
+<few_shot_examples>[Paste 3 successful old emails here]</few_shot_examples>
+<make_format>Limit 200 words. Use bullet points.</make_format></textarea>
+                                        <button class="copy-btn bg-slate-800 text-white px-3 py-2 rounded text-sm hover:bg-slate-700 whitespace-nowrap" data-copy="<objective>Draft a promotional email.</objective>\n<refine_audience>B2B Pharmaceutical procurement officers.</refine_audience>\n<establish_tone>Authoritative, strictly adhering to corporate compliance.</establish_tone>\n<few_shot_examples>[Paste 3 successful old emails here]</few_shot_examples>\n<make_format>Limit 200 words. Use bullet points.</make_format>">Copy</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="step-card bg-white p-4 sm:p-6 rounded-xl border border-slate-200 shadow-sm flex gap-4">
+                            <div class="pt-1"><input type="checkbox" class="step-checkbox" data-phase="phase5"></div>
+                            <div class="w-full">
+                                <h4 class="font-bold text-lg text-slate-800 mb-2">Cognitive Frameworks (CoT, Step-Back, Chain)</h4>
+                                <ul class="list-disc pl-5 text-sm text-slate-700 space-y-2 mb-4">
+                                    <li><strong>Chain-of-Thought (CoT):</strong> Forces step-by-step logic.</li>
+                                    <li><strong>Step-Back Prompting:</strong> Conceptualize abstractly before tactics.</li>
+                                    <li><strong>Chain Prompting:</strong> Using the output of one prompt as input for the next.</li>
+                                </ul>
+                                <div class="flex flex-col sm:flex-row items-start gap-2">
+                                    <textarea readonly class="w-full bg-slate-50 border border-slate-200 rounded p-3 text-sm text-slate-700 h-24 resize-none">Before drafting this software product launch email, take a step back and identify the three core psychological drivers of early technology adoption in the B2B sector. Once identified, draft the email utilizing those specific psychological principles.</textarea>
+                                    <button class="copy-btn bg-slate-200 text-slate-700 px-3 py-2 rounded text-sm hover:bg-slate-300" data-copy="Before drafting this software product launch email, take a step back and identify the three core psychological drivers of early technology adoption in the B2B sector. Once identified, draft the email utilizing those specific psychological principles.">Copy</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="step-card bg-white p-4 sm:p-6 rounded-xl border border-slate-200 shadow-sm flex gap-4">
+                            <div class="pt-1"><input type="checkbox" class="step-checkbox" data-phase="phase5"></div>
+                            <div class="w-full">
+                                <h4 class="font-bold text-lg text-slate-800 mb-2">Dynamic Syllabus & Cross-Domain Synthesis</h4>
+                                <ol class="list-decimal pl-5 text-sm text-slate-700 space-y-2 mb-4">
+                                    <li>Maintain <strong>Notebook A</strong> strictly for consumer psychology strategy.</li>
+                                    <li>Maintain <strong>Notebook B</strong> strictly for technical CRM architecture.</li>
+                                    <li>Use a deep prompt to cross-reference them.</li>
+                                </ol>
+                                <div class="flex flex-col sm:flex-row items-start gap-2">
+                                    <textarea readonly class="w-full bg-slate-50 border border-slate-200 rounded p-3 text-sm text-slate-700 h-28 resize-none">Analyze the consumer psychology principles related to urgency and scarcity located in Notebook A, and design a five-step email re-engagement sequence. Then, provide technical configuration instructions on how to build this exact sequence using rules defined in Notebook B.</textarea>
+                                    <button class="copy-btn bg-slate-200 text-slate-700 px-3 py-2 rounded text-sm hover:bg-slate-300" data-copy="Analyze the consumer psychology principles related to urgency and scarcity located in Notebook A, and design a five-step email re-engagement sequence. Then, provide technical configuration instructions on how to build this exact sequence using rules defined in Notebook B.">Copy</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- L6: Enterprise Labs -->
+                <section id="phase-6" class="relative pt-8">
+                    <div class="flex items-center gap-4 mb-6 border-t border-slate-200 pt-8">
+                        <div class="w-10 h-10 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-lg z-10 shadow-md border-4 border-white shrink-0">L6</div>
+                        <h3 class="text-2xl font-bold text-slate-800">Enterprise Laboratory Scenarios</h3>
+                    </div>
+                    
+                    <div class="ml-5 border-l-2 border-slate-200 pl-4 sm:pl-8 space-y-4">
+                        <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden step-card">
+                            <button class="lab-btn w-full text-left px-4 sm:px-6 py-4 flex justify-between items-center bg-slate-50 hover:bg-slate-100 transition-colors">
+                                <div class="flex items-center gap-3">
+                                    <span class="text-2xl">📉</span>
+                                    <div>
+                                        <h4 class="font-bold text-slate-800">Lab 6.1: Predictive Churn & Dynamic Re-engagement</h4>
+                                        <p class="text-xs text-slate-500 font-normal">Transition to machine-learning-driven audience clustering.</p>
+                                    </div>
+                                </div>
+                                <span class="text-2xl text-slate-400 transform transition-transform duration-300">▾</span>
+                            </button>
+                            <div class="lab-content bg-white px-4 sm:px-6 border-t border-slate-100">
+                                <div class="flex items-center gap-2 mb-4">
+                                    <input type="checkbox" class="step-checkbox" data-phase="phase6"> <span class="font-bold text-slate-700 text-sm">Mark Lab 6.1 Complete</span>
+                                </div>
+                                <ol class="list-decimal pl-5 text-sm text-slate-700 space-y-3 mb-6">
+                                    <li>Within a <strong>Klaviyo</strong> sandbox, generate synthetic customer data.</li>
+                                    <li>Configure a dynamic segment for high <strong>"Churn Risk"</strong> and high <strong>"Predicted LTV"</strong>.</li>
+                                    <li>Export metadata into a generative AI tool (Gemini/Jasper).</li>
+                                    <li>Instruct AI to generate varied content blocks tailored specifically to this profile.</li>
+                                    <li>Configure an automated flow routing synthetic customers into branches based on scoring.</li>
+                                </ol>
+                            </div>
+                        </div>
+
+                        <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden step-card">
+                            <button class="lab-btn w-full text-left px-4 sm:px-6 py-4 flex justify-between items-center bg-slate-50 hover:bg-slate-100 transition-colors">
+                                <div class="flex items-center gap-3">
+                                    <span class="text-2xl">🕸️</span>
+                                    <div>
+                                        <h4 class="font-bold text-slate-800">Lab 6.2: Automated Lifecycle Architecture</h4>
+                                        <p class="text-xs text-slate-500 font-normal">Design an enterprise-scale journey with API webhooks.</p>
+                                    </div>
+                                </div>
+                                <span class="text-2xl text-slate-400 transform transition-transform duration-300">▾</span>
+                            </button>
+                            <div class="lab-content bg-white px-4 sm:px-6 border-t border-slate-100">
+                                <div class="flex items-center gap-2 mb-4">
+                                    <input type="checkbox" class="step-checkbox" data-phase="phase6"> <span class="font-bold text-slate-700 text-sm">Mark Lab 6.2 Complete</span>
+                                </div>
+                                <ol class="list-decimal pl-5 text-sm text-slate-700 space-y-3 mb-6">
+                                    <li>Initiate exercise in <strong>ActiveCampaign's</strong> visual builder.</li>
+                                    <li>Integrate <strong>Jasper AI</strong> (or Gemini via API) using <strong>n8n</strong>.</li>
+                                    <li>Configure a <strong>Chain Prompt</strong> within the middleware.</li>
+                                    <li><strong>Crucial Governance:</strong> Configure workflow to pause and route AI-generated drafts to an <em>approval queue</em> (Human-in-the-loop).</li>
+                                </ol>
+                            </div>
+                        </div>
+
+                        <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden step-card">
+                            <button class="lab-btn w-full text-left px-4 sm:px-6 py-4 flex justify-between items-center bg-slate-50 hover:bg-slate-100 transition-colors">
+                                <div class="flex items-center gap-3">
+                                    <span class="text-2xl">📊</span>
+                                    <div>
+                                        <h4 class="font-bold text-slate-800">Lab 6.3: Deep Data Analysis & Split-Testing</h4>
+                                        <p class="text-xs text-slate-500 font-normal">Leverage LLMs for anomaly detection.</p>
+                                    </div>
+                                </div>
+                                <span class="text-2xl text-slate-400 transform transition-transform duration-300">▾</span>
+                            </button>
+                            <div class="lab-content bg-white px-4 sm:px-6 border-t border-slate-100">
+                                 <div class="flex items-center gap-2 mb-4">
+                                    <input type="checkbox" class="step-checkbox" data-phase="phase6"> <span class="font-bold text-slate-700 text-sm">Mark Lab 6.3 Complete</span>
+                                </div>
+                                <ol class="list-decimal pl-5 text-sm text-slate-700 space-y-3 mb-6">
+                                    <li>Extract historical data (strictly sanitize PII).</li>
+                                    <li>Upload CSV into NotebookLM or Gemini Advanced.</li>
+                                    <li>Apply advanced <strong>Chain-of-Thought</strong> prompting.</li>
+                                </ol>
+                                <div class="bg-slate-50 p-4 rounded-lg border border-slate-200 mb-4">
+                                    <p class="text-xs font-bold text-slate-600 uppercase tracking-wide mb-1">CoT Data Prompt</p>
+                                    <div class="flex flex-col sm:flex-row items-start gap-2">
+                                        <textarea readonly class="w-full bg-white border border-slate-300 rounded p-2 text-xs text-slate-700 h-40 resize-none font-mono">Analyze the open rates, click-through rates, and conversion metrics across the provided dataset of the last fifty campaigns. Identify any statistically significant correlations between specific subject line syntaxes (e.g., question-based versus urgency-based) and overall engagement rates. Identify any anomalies in performance drops. Based exclusively on these findings, generate ten new subject line variations optimized for our lowest-performing audience segments.</textarea>
+                                        <button class="copy-btn bg-slate-800 text-white px-3 py-2 rounded text-sm hover:bg-slate-700 whitespace-nowrap" data-copy="Analyze the open rates, click-through rates, and conversion metrics across the provided dataset of the last fifty campaigns. Identify any statistically significant correlations between specific subject line syntaxes (e.g., question-based versus urgency-based) and overall engagement rates. Identify any anomalies in performance drops. Based exclusively on these findings, generate ten new subject line variations optimized for our lowest-performing audience segments.">Copy</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- L7: Elite Operations -->
+                <section id="phase-7" class="relative pt-8">
+                    <div class="flex items-center gap-4 mb-6 border-t border-slate-200 pt-8">
+                        <div class="w-10 h-10 rounded-full bg-slate-900 text-white flex items-center justify-center font-bold text-lg z-10 shadow-md border-4 border-white shrink-0">L7</div>
+                        <h3 class="text-2xl font-bold text-slate-800">Elite Operations</h3>
+                    </div>
+                    
+                    <div class="ml-5 border-l-2 border-slate-200 pl-4 sm:pl-8 space-y-6">
+                        <div class="step-card bg-white p-4 sm:p-6 rounded-xl border border-slate-200 shadow-sm flex gap-4">
+                            <div class="pt-1"><input type="checkbox" class="step-checkbox" data-phase="phase7"></div>
+                            <div class="w-full">
+                                <h4 class="font-bold text-lg text-slate-800 mb-2">Deliverability & Sender Reputation</h4>
+                                <p class="text-slate-600 text-sm mb-3">Learn the technical backbone of email deliverability (SPF, DKIM, DMARC).</p>
+                                <ol class="list-decimal pl-5 text-sm text-slate-700 space-y-2 mb-4">
+                                    <li>Use Gemini to analyze a draft and identify 'Spam Trap' keywords.</li>
+                                    <li>Ask Gemini to act as an IT Specialist to write the DNS records.</li>
+                                </ol>
+                                <div class="flex flex-col sm:flex-row items-start gap-2">
+                                    <textarea readonly class="w-full bg-slate-50 border border-slate-200 rounded p-3 text-sm text-slate-700 h-20 resize-none">Act as a Senior IT Deliverability Expert. Explain how SPF, DKIM, and DMARC work together to prevent spoofing. Then, generate a standard DMARC txt record with a policy of 'quarantine'.</textarea>
+                                    <button class="copy-btn bg-slate-200 text-slate-700 px-3 py-2 rounded text-sm hover:bg-slate-300" data-copy="Act as a Senior IT Deliverability Expert. Explain how SPF, DKIM, and DMARC work together to prevent spoofing. Then, generate a standard DMARC txt record with a policy of 'quarantine'.">Copy</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="step-card bg-white p-4 sm:p-6 rounded-xl border border-slate-200 shadow-sm flex gap-4">
+                            <div class="pt-1"><input type="checkbox" class="step-checkbox" data-phase="phase7"></div>
+                            <div class="w-full">
+                                <h4 class="font-bold text-lg text-slate-800 mb-2">Omnichannel AI Orchestration</h4>
+                                <p class="text-slate-600 text-sm mb-3">Marketing is no longer just email. Harmonize the message across mediums.</p>
+                                <ol class="list-decimal pl-5 text-sm text-slate-700 space-y-2 mb-4">
+                                    <li>Take a 500-word newsletter generated previously.</li>
+                                    <li>Prompt Gemini to translate and condense this core message into an SMS and WhatsApp broadcast.</li>
+                                </ol>
+                                <div class="flex flex-col sm:flex-row items-start gap-2">
+                                    <textarea readonly class="w-full bg-slate-50 border border-slate-200 rounded p-3 text-sm text-slate-700 h-20 resize-none">Here is a 500-word B2B email. Condense the core value proposition into a 160-character SMS text message. Then, create a conversational variant suitable for a WhatsApp Business broadcast.</textarea>
+                                    <button class="copy-btn bg-slate-200 text-slate-700 px-3 py-2 rounded text-sm hover:bg-slate-300" data-copy="Here is a 500-word B2B email. Condense the core value proposition into a 160-character SMS text message. Then, create a conversational variant suitable for a WhatsApp Business broadcast.">Copy</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+            
+            <div class="text-center mt-12">
+                <button class="nav-switch-btn bg-indigo-600 text-white px-8 py-4 rounded-xl font-bold shadow-md hover:bg-indigo-700 transition-colors" data-target="view-notebooklm">
+                    Proceed to NotebookLM Guide ➔
+                </button>
+            </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- VIEW 4: NOTEBOOKLM MASTERY (NEW) -->
+        <!-- ========================================== -->
+        <div id="view-notebooklm" class="app-view">
+            <div class="mb-10">
+                <h2 class="text-4xl font-black text-slate-800 mb-3">NotebookLM Mastery Guide</h2>
+                <p class="text-lg text-slate-600">The secret to elite training is not just clicking the default "Quiz" button—it's commanding NotebookLM with custom, targeted prompts.</p>
+            </div>
+
+            <!-- Intro & Synergy Guide -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
+                <div class="bg-indigo-50 border border-indigo-100 rounded-2xl p-6 shadow-sm">
+                    <h3 class="text-xl font-bold text-indigo-900 mb-3 flex items-center gap-2"><span>🎯</span> Chat & Source Strategies</h3>
+                    <p class="text-sm text-indigo-800 mb-4">When using NotebookLM, your results change entirely based on *what* you select in the "Source Guide" (left sidebar).</p>
+                    <ul class="space-y-3 text-sm text-indigo-900">
+                        <li><strong>All Sources (General Chat):</strong> Best for L1/L2 overviews. Type a prompt without selecting anything to have NotebookLM synthesize *everything* you uploaded.</li>
+                        <li><strong>Specific Source Selection:</strong> Best for L3/L4. Check the box next to *only* your "Brand Guidelines" PDF, then ask it to quiz you. It will ignore data analytics and focus purely on copywriting rules.</li>
+                        <li><strong>The Studio:</strong> Use the Audio Overview feature here, but remember you can customize the podcast by typing a prompt *before* you click Generate!</li>
+                    </ul>
+                </div>
+                <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+                    <h3 class="text-xl font-bold text-slate-800 mb-3 flex items-center gap-2"><span>🔗</span> The Gemini Synergy</h3>
+                    <p class="text-sm text-slate-600 mb-4">NotebookLM is great for studying, but Gemini Advanced is better for *writing* your actual emails. Here is how to combine them for advanced research:</p>
+                    <ol class="list-decimal pl-5 space-y-2 text-sm text-slate-700">
+                        <li>In NotebookLM, select an amazing insight or summary you just generated.</li>
+                        <li>Click the <strong>"Save to Note"</strong> pin icon.</li>
+                        <li>Select all your saved notes and click the <strong>Export to Google Docs</strong> button at the top.</li>
+                        <li>Open Gemini Advanced, type <code>@Google Docs</code>, select that new document, and prompt Gemini: <em>"Using this research doc, write my campaign email."</em></li>
+                    </ol>
+                </div>
+            </div>
+
+            <!-- How to build your own -->
+            <div class="bg-slate-800 text-white rounded-2xl p-8 mb-12 shadow-md">
+                <h3 class="text-2xl font-bold mb-4">How to Build Your Own Study Prompts</h3>
+                <p class="text-sm text-slate-300 mb-6">As you progress, you will need to invent your own study tools. Use this 3-part formula when typing into the NotebookLM chat box:</p>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="bg-slate-700 p-4 rounded-xl border border-slate-600">
+                        <strong class="text-emerald-400 block mb-1">1. The Format</strong>
+                        <p class="text-xs text-slate-300">Tell it exactly what you want (e.g., "Create 10 flashcards," "Write a 5-question multiple choice quiz," or "Create a 1-page study guide").</p>
+                    </div>
+                    <div class="bg-slate-700 p-4 rounded-xl border border-slate-600">
+                        <strong class="text-yellow-400 block mb-1">2. The Constraint</strong>
+                        <p class="text-xs text-slate-300">Force it to focus (e.g., "Focus ONLY on the B2B compliance rules," or "Only test me on A/B testing variables").</p>
+                    </div>
+                    <div class="bg-slate-700 p-4 rounded-xl border border-slate-600">
+                        <strong class="text-indigo-400 block mb-1">3. The Output Style</strong>
+                        <p class="text-xs text-slate-300">Dictate the layout (e.g., "Format with Question: / Answer:", or "Provide an answer key at the very bottom").</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- L1-L7 Prompt Library -->
+            <h3 class="text-2xl font-bold text-slate-800 mb-6">Custom Study Prompt Library (L1 - L7)</h3>
+            <p class="text-sm text-slate-600 mb-8">Click on your current training level below to access 4 pre-written prompts designed to test your specific skills. Paste these directly into NotebookLM.</p>
+
+            <div class="space-y-4">
+                
+                <!-- L1 Prompts -->
+                <div class="bg-white rounded-xl border border-green-200 shadow-sm overflow-hidden">
+                    <button class="lab-btn w-full text-left px-6 py-4 flex justify-between items-center bg-green-50 hover:bg-green-100 transition-colors">
+                        <div class="font-bold text-green-900 flex items-center gap-3">
+                            <span class="w-6 h-6 rounded-full bg-green-500 text-white flex items-center justify-center text-xs">L1</span>
+                            Novice Foundations Study Prompts
+                        </div>
+                        <span class="text-2xl text-green-400 transform transition-transform duration-300">▾</span>
+                    </button>
+                    <div class="lab-content bg-white px-6 border-t border-green-100 space-y-6">
+                        <div>
+                            <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">📇 Flashcards (Terminology)</span>
+                            <div class="flex flex-col sm:flex-row items-start gap-2 mt-2">
+                                <textarea readonly class="w-full bg-slate-50 border border-slate-200 rounded p-3 text-sm text-slate-700 h-20 resize-none font-mono">Generate 10 interactive flashcards focusing on core CRM terminology based on the uploaded guides. Format the output strictly as Question: [Q] / Answer: [A].</textarea>
+                                <button class="copy-btn bg-slate-800 text-white px-3 py-2 rounded text-sm hover:bg-slate-700 whitespace-nowrap" data-copy="Generate 10 interactive flashcards focusing on core CRM terminology based on the uploaded guides. Format the output strictly as Question: [Q] / Answer: [A].">Copy</button>
+                            </div>
+                        </div>
+                        <div>
+                            <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">📝 Scenario Quiz</span>
+                            <div class="flex flex-col sm:flex-row items-start gap-2 mt-2">
+                                <textarea readonly class="w-full bg-slate-50 border border-slate-200 rounded p-3 text-sm text-slate-700 h-24 resize-none font-mono">Create a 5-question multiple-choice quiz testing my knowledge on the difference between old manual list uploads and dynamic Active Lists. Put the answer key at the very bottom.</textarea>
+                                <button class="copy-btn bg-slate-800 text-white px-3 py-2 rounded text-sm hover:bg-slate-700 whitespace-nowrap" data-copy="Create a 5-question multiple-choice quiz testing my knowledge on the difference between old manual list uploads and dynamic Active Lists. Put the answer key at the very bottom.">Copy</button>
+                            </div>
+                        </div>
+                        <div>
+                            <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">🎧 Audio Podcast Prompt (Paste in Studio before clicking Generate)</span>
+                            <div class="flex flex-col sm:flex-row items-start gap-2 mt-2">
+                                <textarea readonly class="w-full bg-slate-50 border border-slate-200 rounded p-3 text-sm text-slate-700 h-24 resize-none font-mono">Create an audio overview focusing ONLY on why brand compliance and regulatory rules are non-negotiable in our specific industry. Ignore the technical CRM data for this podcast.</textarea>
+                                <button class="copy-btn bg-slate-800 text-white px-3 py-2 rounded text-sm hover:bg-slate-700 whitespace-nowrap" data-copy="Create an audio overview focusing ONLY on why brand compliance and regulatory rules are non-negotiable in our specific industry. Ignore the technical CRM data for this podcast.">Copy</button>
+                            </div>
+                        </div>
+                        <div>
+                            <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">📖 Tier Review Guide</span>
+                            <div class="flex flex-col sm:flex-row items-start gap-2 mt-2">
+                                <textarea readonly class="w-full bg-slate-50 border border-slate-200 rounded p-3 text-sm text-slate-700 h-20 resize-none font-mono">Act as my tutor. Summarize all key concepts regarding CRM sandboxes, active lists, and basic audience synthesis into a highly readable 1-page study guide.</textarea>
+                                <button class="copy-btn bg-slate-800 text-white px-3 py-2 rounded text-sm hover:bg-slate-700 whitespace-nowrap" data-copy="Act as my tutor. Summarize all key concepts regarding CRM sandboxes, active lists, and basic audience synthesis into a highly readable 1-page study guide.">Copy</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- L2 Prompts -->
+                <div class="bg-white rounded-xl border border-yellow-200 shadow-sm overflow-hidden">
+                    <button class="lab-btn w-full text-left px-6 py-4 flex justify-between items-center bg-yellow-50 hover:bg-yellow-100 transition-colors">
+                        <div class="font-bold text-yellow-900 flex items-center gap-3">
+                            <span class="w-6 h-6 rounded-full bg-yellow-400 text-slate-900 flex items-center justify-center text-xs">L2</span>
+                            Intermediate AI Study Prompts
+                        </div>
+                        <span class="text-2xl text-yellow-400 transform transition-transform duration-300">▾</span>
+                    </button>
+                    <div class="lab-content bg-white px-6 border-t border-yellow-100 space-y-6">
+                        <div>
+                            <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">📇 Flashcards (A/B Testing)</span>
+                            <div class="flex flex-col sm:flex-row items-start gap-2 mt-2">
+                                <textarea readonly class="w-full bg-slate-50 border border-slate-200 rounded p-3 text-sm text-slate-700 h-20 resize-none font-mono">Create 10 flashcards detailing different A/B testing variables for email marketing (e.g., Urgency, Curiosity, Value). Define what each psychological trigger means.</textarea>
+                                <button class="copy-btn bg-slate-800 text-white px-3 py-2 rounded text-sm hover:bg-slate-700 whitespace-nowrap" data-copy="Create 10 flashcards detailing different A/B testing variables for email marketing (e.g., Urgency, Curiosity, Value). Define what each psychological trigger means.">Copy</button>
+                            </div>
+                        </div>
+                        <div>
+                            <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">📝 Scenario Quiz</span>
+                            <div class="flex flex-col sm:flex-row items-start gap-2 mt-2">
+                                <textarea readonly class="w-full bg-slate-50 border border-slate-200 rounded p-3 text-sm text-slate-700 h-20 resize-none font-mono">Create a 'Workflow Logic' quiz. Give me 5 scenarios (e.g., 'If a user downloads an ebook...'), and ask me what the appropriate delay and follow-up email should be.</textarea>
+                                <button class="copy-btn bg-slate-800 text-white px-3 py-2 rounded text-sm hover:bg-slate-700 whitespace-nowrap" data-copy="Create a 'Workflow Logic' quiz. Give me 5 scenarios (e.g., 'If a user downloads an ebook...'), and ask me what the appropriate delay and follow-up email should be.">Copy</button>
+                            </div>
+                        </div>
+                        <div>
+                            <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">🎧 Audio Podcast Prompt</span>
+                            <div class="flex flex-col sm:flex-row items-start gap-2 mt-2">
+                                <textarea readonly class="w-full bg-slate-50 border border-slate-200 rounded p-3 text-sm text-slate-700 h-20 resize-none font-mono">Host a podcast discussing the psychological journey a user takes during a 3-part automated Welcome Series. Why does the content need to change from Email 1 to Email 3?</textarea>
+                                <button class="copy-btn bg-slate-800 text-white px-3 py-2 rounded text-sm hover:bg-slate-700 whitespace-nowrap" data-copy="Host a podcast discussing the psychological journey a user takes during a 3-part automated Welcome Series. Why does the content need to change from Email 1 to Email 3?">Copy</button>
+                            </div>
+                        </div>
+                        <div>
+                            <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">📖 Tier Review Guide</span>
+                            <div class="flex flex-col sm:flex-row items-start gap-2 mt-2">
+                                <textarea readonly class="w-full bg-slate-50 border border-slate-200 rounded p-3 text-sm text-slate-700 h-20 resize-none font-mono">Synthesize all information regarding Intermediate AI workflow logic and automated lead nurturing into a step-by-step execution checklist.</textarea>
+                                <button class="copy-btn bg-slate-800 text-white px-3 py-2 rounded text-sm hover:bg-slate-700 whitespace-nowrap" data-copy="Synthesize all information regarding Intermediate AI workflow logic and automated lead nurturing into a step-by-step execution checklist.">Copy</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- L3 Prompts -->
+                <div class="bg-white rounded-xl border border-orange-200 shadow-sm overflow-hidden">
+                    <button class="lab-btn w-full text-left px-6 py-4 flex justify-between items-center bg-orange-50 hover:bg-orange-100 transition-colors">
+                        <div class="font-bold text-orange-900 flex items-center gap-3">
+                            <span class="w-6 h-6 rounded-full bg-orange-500 text-white flex items-center justify-center text-xs">L3</span>
+                            Advanced Data/QA Study Prompts
+                        </div>
+                        <span class="text-2xl text-orange-400 transform transition-transform duration-300">▾</span>
+                    </button>
+                    <div class="lab-content bg-white px-6 border-t border-orange-100 space-y-6">
+                        <div>
+                            <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">📇 Flashcards (Analytics)</span>
+                            <div class="flex flex-col sm:flex-row items-start gap-2 mt-2">
+                                <textarea readonly class="w-full bg-slate-50 border border-slate-200 rounded p-3 text-sm text-slate-700 h-20 resize-none font-mono">Generate flashcards defining key statistical terms used in email marketing data analysis (e.g., Anomaly, Statistical Significance, Bounce Rate).</textarea>
+                                <button class="copy-btn bg-slate-800 text-white px-3 py-2 rounded text-sm hover:bg-slate-700 whitespace-nowrap" data-copy="Generate flashcards defining key statistical terms used in email marketing data analysis (e.g., Anomaly, Statistical Significance, Bounce Rate).">Copy</button>
+                            </div>
+                        </div>
+                        <div>
+                            <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">📝 Scenario Quiz</span>
+                            <div class="flex flex-col sm:flex-row items-start gap-2 mt-2">
+                                <textarea readonly class="w-full bg-slate-50 border border-slate-200 rounded p-3 text-sm text-slate-700 h-24 resize-none font-mono">Create a 'Find the Error' quiz. Show me 4 draft email excerpts, and ask me to identify which specific corporate compliance rule is being broken in each one based on my uploaded docs.</textarea>
+                                <button class="copy-btn bg-slate-800 text-white px-3 py-2 rounded text-sm hover:bg-slate-700 whitespace-nowrap" data-copy="Create a 'Find the Error' quiz. Show me 4 draft email excerpts, and ask me to identify which specific corporate compliance rule is being broken in each one based on my uploaded docs.">Copy</button>
+                            </div>
+                        </div>
+                        <div>
+                            <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">🎧 Audio Podcast Prompt</span>
+                            <div class="flex flex-col sm:flex-row items-start gap-2 mt-2">
+                                <textarea readonly class="w-full bg-slate-50 border border-slate-200 rounded p-3 text-sm text-slate-700 h-24 resize-none font-mono">Produce a deep-dive podcast episode discussing how marketers should approach interpreting CSV campaign data. What are the common traps people fall into when looking at open rates?</textarea>
+                                <button class="copy-btn bg-slate-800 text-white px-3 py-2 rounded text-sm hover:bg-slate-700 whitespace-nowrap" data-copy="Produce a deep-dive podcast episode discussing how marketers should approach interpreting CSV campaign data. What are the common traps people fall into when looking at open rates?">Copy</button>
+                            </div>
+                        </div>
+                        <div>
+                            <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">📖 Tier Review Guide</span>
+                            <div class="flex flex-col sm:flex-row items-start gap-2 mt-2">
+                                <textarea readonly class="w-full bg-slate-50 border border-slate-200 rounded p-3 text-sm text-slate-700 h-20 resize-none font-mono">Draft a Master Guide on 'Data QA.' Outline the exact process a marketer should take to audit an AI-generated email before deployment.</textarea>
+                                <button class="copy-btn bg-slate-800 text-white px-3 py-2 rounded text-sm hover:bg-slate-700 whitespace-nowrap" data-copy="Draft a Master Guide on 'Data QA.' Outline the exact process a marketer should take to audit an AI-generated email before deployment.">Copy</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- L4 Prompts -->
+                <div class="bg-white rounded-xl border border-purple-200 shadow-sm overflow-hidden">
+                    <button class="lab-btn w-full text-left px-6 py-4 flex justify-between items-center bg-purple-50 hover:bg-purple-100 transition-colors">
+                        <div class="font-bold text-purple-900 flex items-center gap-3">
+                            <span class="w-6 h-6 rounded-full bg-purple-500 text-white flex items-center justify-center text-xs">L4</span>
+                            Expert Architecture Study Prompts
+                        </div>
+                        <span class="text-2xl text-purple-400 transform transition-transform duration-300">▾</span>
+                    </button>
+                    <div class="lab-content bg-white px-6 border-t border-purple-100 space-y-6">
+                        <div>
+                            <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">📇 Flashcards (Integrations)</span>
+                            <div class="flex flex-col sm:flex-row items-start gap-2 mt-2">
+                                <textarea readonly class="w-full bg-slate-50 border border-slate-200 rounded p-3 text-sm text-slate-700 h-20 resize-none font-mono">Create flashcards defining technical integration terms such as API, Webhook, JSON Payload, and Middleware (Zapier).</textarea>
+                                <button class="copy-btn bg-slate-800 text-white px-3 py-2 rounded text-sm hover:bg-slate-700 whitespace-nowrap" data-copy="Create flashcards defining technical integration terms such as API, Webhook, JSON Payload, and Middleware (Zapier).">Copy</button>
+                            </div>
+                        </div>
+                        <div>
+                            <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">📝 Scenario Quiz</span>
+                            <div class="flex flex-col sm:flex-row items-start gap-2 mt-2">
+                                <textarea readonly class="w-full bg-slate-50 border border-slate-200 rounded p-3 text-sm text-slate-700 h-24 resize-none font-mono">Design a troubleshooting quiz. Give me 4 scenarios where a Zapier integration between HubSpot and Google Sheets breaks, and provide multiple-choice solutions on how to fix it.</textarea>
+                                <button class="copy-btn bg-slate-800 text-white px-3 py-2 rounded text-sm hover:bg-slate-700 whitespace-nowrap" data-copy="Design a troubleshooting quiz. Give me 4 scenarios where a Zapier integration between HubSpot and Google Sheets breaks, and provide multiple-choice solutions on how to fix it.">Copy</button>
+                            </div>
+                        </div>
+                        <div>
+                            <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">🎧 Audio Podcast Prompt</span>
+                            <div class="flex flex-col sm:flex-row items-start gap-2 mt-2">
+                                <textarea readonly class="w-full bg-slate-50 border border-slate-200 rounded p-3 text-sm text-slate-700 h-24 resize-none font-mono">Simulate a hostile job interview. Have the podcast hosts debate whether relying on AI makes a marketer 'lazy', and then have one host successfully defend the 'AI Architect' methodology.</textarea>
+                                <button class="copy-btn bg-slate-800 text-white px-3 py-2 rounded text-sm hover:bg-slate-700 whitespace-nowrap" data-copy="Simulate a hostile job interview. Have the podcast hosts debate whether relying on AI makes a marketer 'lazy', and then have one host successfully defend the 'AI Architect' methodology.">Copy</button>
+                            </div>
+                        </div>
+                        <div>
+                            <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">📖 Tier Review Guide</span>
+                            <div class="flex flex-col sm:flex-row items-start gap-2 mt-2">
+                                <textarea readonly class="w-full bg-slate-50 border border-slate-200 rounded p-3 text-sm text-slate-700 h-20 resize-none font-mono">Summarize the core concepts of Capstone Integration logic. Explain the business value of connecting a CRM to external tools using middleware.</textarea>
+                                <button class="copy-btn bg-slate-800 text-white px-3 py-2 rounded text-sm hover:bg-slate-700 whitespace-nowrap" data-copy="Summarize the core concepts of Capstone Integration logic. Explain the business value of connecting a CRM to external tools using middleware.">Copy</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- L5 Prompts -->
+                <div class="bg-white rounded-xl border border-red-200 shadow-sm overflow-hidden">
+                    <button class="lab-btn w-full text-left px-6 py-4 flex justify-between items-center bg-red-50 hover:bg-red-100 transition-colors">
+                        <div class="font-bold text-red-900 flex items-center gap-3">
+                            <span class="w-6 h-6 rounded-full bg-red-600 text-white flex items-center justify-center text-xs">L5</span>
+                            Cognitive Prompting Study Prompts
+                        </div>
+                        <span class="text-2xl text-red-400 transform transition-transform duration-300">▾</span>
+                    </button>
+                    <div class="lab-content bg-white px-6 border-t border-red-100 space-y-6">
+                        <div>
+                            <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">📇 Flashcards (Frameworks)</span>
+                            <div class="flex flex-col sm:flex-row items-start gap-2 mt-2">
+                                <textarea readonly class="w-full bg-slate-50 border border-slate-200 rounded p-3 text-sm text-slate-700 h-24 resize-none font-mono">Create flashcards testing my memory on the DREAM framework (Describe, Refine, Establish, Add, Make) and cognitive models like Chain-of-Thought and Step-Back Prompting.</textarea>
+                                <button class="copy-btn bg-slate-800 text-white px-3 py-2 rounded text-sm hover:bg-slate-700 whitespace-nowrap" data-copy="Create flashcards testing my memory on the DREAM framework (Describe, Refine, Establish, Add, Make) and cognitive models like Chain-of-Thought and Step-Back Prompting.">Copy</button>
+                            </div>
+                        </div>
+                        <div>
+                            <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">📝 Scenario Quiz</span>
+                            <div class="flex flex-col sm:flex-row items-start gap-2 mt-2">
+                                <textarea readonly class="w-full bg-slate-50 border border-slate-200 rounded p-3 text-sm text-slate-700 h-24 resize-none font-mono">Present me with 3 'terrible, vague prompts' commonly used by novices. Quiz me by asking which specific structural directive (from the DREAM framework) is missing in each one.</textarea>
+                                <button class="copy-btn bg-slate-800 text-white px-3 py-2 rounded text-sm hover:bg-slate-700 whitespace-nowrap" data-copy="Present me with 3 'terrible, vague prompts' commonly used by novices. Quiz me by asking which specific structural directive (from the DREAM framework) is missing in each one.">Copy</button>
+                            </div>
+                        </div>
+                        <div>
+                            <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">🎧 Audio Podcast Prompt</span>
+                            <div class="flex flex-col sm:flex-row items-start gap-2 mt-2">
+                                <textarea readonly class="w-full bg-slate-50 border border-slate-200 rounded p-3 text-sm text-slate-700 h-24 resize-none font-mono">Record a deep psychological discussion on *why* Chain-of-Thought prompting works better than direct prompting when asking an AI to analyze complex marketing data.</textarea>
+                                <button class="copy-btn bg-slate-800 text-white px-3 py-2 rounded text-sm hover:bg-slate-700 whitespace-nowrap" data-copy="Record a deep psychological discussion on *why* Chain-of-Thought prompting works better than direct prompting when asking an AI to analyze complex marketing data.">Copy</button>
+                            </div>
+                        </div>
+                        <div>
+                            <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">📖 Tier Review Guide</span>
+                            <div class="flex flex-col sm:flex-row items-start gap-2 mt-2">
+                                <textarea readonly class="w-full bg-slate-50 border border-slate-200 rounded p-3 text-sm text-slate-700 h-20 resize-none font-mono">Generate 'The Ultimate Prompt Engineering Cheatsheet' summarizing all structural directives and cognitive frameworks learned in L5.</textarea>
+                                <button class="copy-btn bg-slate-800 text-white px-3 py-2 rounded text-sm hover:bg-slate-700 whitespace-nowrap" data-copy="Generate 'The Ultimate Prompt Engineering Cheatsheet' summarizing all structural directives and cognitive frameworks learned in L5.">Copy</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- L6 Prompts -->
+                <div class="bg-white rounded-xl border border-blue-200 shadow-sm overflow-hidden">
+                    <button class="lab-btn w-full text-left px-6 py-4 flex justify-between items-center bg-blue-50 hover:bg-blue-100 transition-colors">
+                        <div class="font-bold text-blue-900 flex items-center gap-3">
+                            <span class="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs">L6</span>
+                            Enterprise Labs Study Prompts
+                        </div>
+                        <span class="text-2xl text-blue-400 transform transition-transform duration-300">▾</span>
+                    </button>
+                    <div class="lab-content bg-white px-6 border-t border-blue-100 space-y-6">
+                        <div>
+                            <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">📇 Flashcards (Enterprise Logic)</span>
+                            <div class="flex flex-col sm:flex-row items-start gap-2 mt-2">
+                                <textarea readonly class="w-full bg-slate-50 border border-slate-200 rounded p-3 text-sm text-slate-700 h-24 resize-none font-mono">Generate flashcards defining predictive churn, LTV (Lifetime Value), and the concept of 'Human-in-the-loop' governance regarding automated workflows.</textarea>
+                                <button class="copy-btn bg-slate-800 text-white px-3 py-2 rounded text-sm hover:bg-slate-700 whitespace-nowrap" data-copy="Generate flashcards defining predictive churn, LTV (Lifetime Value), and the concept of 'Human-in-the-loop' governance regarding automated workflows.">Copy</button>
+                            </div>
+                        </div>
+                        <div>
+                            <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">📝 Scenario Quiz</span>
+                            <div class="flex flex-col sm:flex-row items-start gap-2 mt-2">
+                                <textarea readonly class="w-full bg-slate-50 border border-slate-200 rounded p-3 text-sm text-slate-700 h-24 resize-none font-mono">Create a routing logic quiz. Give me scenarios where AI generates dynamic content via n8n, and quiz me on the safest way to structure the approval queue before deployment.</textarea>
+                                <button class="copy-btn bg-slate-800 text-white px-3 py-2 rounded text-sm hover:bg-slate-700 whitespace-nowrap" data-copy="Create a routing logic quiz. Give me scenarios where AI generates dynamic content via n8n, and quiz me on the safest way to structure the approval queue before deployment.">Copy</button>
+                            </div>
+                        </div>
+                        <div>
+                            <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">🎧 Audio Podcast Prompt</span>
+                            <div class="flex flex-col sm:flex-row items-start gap-2 mt-2">
+                                <textarea readonly class="w-full bg-slate-50 border border-slate-200 rounded p-3 text-sm text-slate-700 h-24 resize-none font-mono">Produce an audio overview detailing exactly how webhook data flows from ActiveCampaign, into an AI generator, and back into a campaign draft. Explain it like I am a beginner.</textarea>
+                                <button class="copy-btn bg-slate-800 text-white px-3 py-2 rounded text-sm hover:bg-slate-700 whitespace-nowrap" data-copy="Produce an audio overview detailing exactly how webhook data flows from ActiveCampaign, into an AI generator, and back into a campaign draft. Explain it like I am a beginner.">Copy</button>
+                            </div>
+                        </div>
+                        <div>
+                            <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">📖 Tier Review Guide</span>
+                            <div class="flex flex-col sm:flex-row items-start gap-2 mt-2">
+                                <textarea readonly class="w-full bg-slate-50 border border-slate-200 rounded p-3 text-sm text-slate-700 h-20 resize-none font-mono">Synthesize the overarching goals of the Enterprise Scenarios. Why is predictive churn analysis more valuable than static list unsubscribes?</textarea>
+                                <button class="copy-btn bg-slate-800 text-white px-3 py-2 rounded text-sm hover:bg-slate-700 whitespace-nowrap" data-copy="Synthesize the overarching goals of the Enterprise Scenarios. Why is predictive churn analysis more valuable than static list unsubscribes?">Copy</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- L7 Prompts -->
+                <div class="bg-white rounded-xl border border-slate-800 shadow-sm overflow-hidden">
+                    <button class="lab-btn w-full text-left px-6 py-4 flex justify-between items-center bg-slate-100 hover:bg-slate-200 transition-colors">
+                        <div class="font-bold text-slate-900 flex items-center gap-3">
+                            <span class="w-6 h-6 rounded-full bg-slate-900 text-white flex items-center justify-center text-xs">L7</span>
+                            Elite Operations Study Prompts
+                        </div>
+                        <span class="text-2xl text-slate-400 transform transition-transform duration-300">▾</span>
+                    </button>
+                    <div class="lab-content bg-white px-6 border-t border-slate-200 space-y-6">
+                        <div>
+                            <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">📇 Flashcards (Deliverability)</span>
+                            <div class="flex flex-col sm:flex-row items-start gap-2 mt-2">
+                                <textarea readonly class="w-full bg-slate-50 border border-slate-200 rounded p-3 text-sm text-slate-700 h-20 resize-none font-mono">Generate highly technical flashcards explaining SPF, DKIM, and DMARC. Include analogies to make them easier to remember.</textarea>
+                                <button class="copy-btn bg-slate-800 text-white px-3 py-2 rounded text-sm hover:bg-slate-700 whitespace-nowrap" data-copy="Generate highly technical flashcards explaining SPF, DKIM, and DMARC. Include analogies to make them easier to remember.">Copy</button>
+                            </div>
+                        </div>
+                        <div>
+                            <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">📝 Scenario Quiz</span>
+                            <div class="flex flex-col sm:flex-row items-start gap-2 mt-2">
+                                <textarea readonly class="w-full bg-slate-50 border border-slate-200 rounded p-3 text-sm text-slate-700 h-24 resize-none font-mono">Create a DNS record troubleshooting quiz. Present me with mock DMARC failure reports and ask me to identify if the issue is a missing SPF record or an unaligned DKIM signature.</textarea>
+                                <button class="copy-btn bg-slate-800 text-white px-3 py-2 rounded text-sm hover:bg-slate-700 whitespace-nowrap" data-copy="Create a DNS record troubleshooting quiz. Present me with mock DMARC failure reports and ask me to identify if the issue is a missing SPF record or an unaligned DKIM signature.">Copy</button>
+                            </div>
+                        </div>
+                        <div>
+                            <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">🎧 Audio Podcast Prompt</span>
+                            <div class="flex flex-col sm:flex-row items-start gap-2 mt-2">
+                                <textarea readonly class="w-full bg-slate-50 border border-slate-200 rounded p-3 text-sm text-slate-700 h-24 resize-none font-mono">Host an audio discussion on the challenges of Omnichannel marketing. Discuss the difficulty of translating a long-form strategic email into the tight constraints of an SMS alert.</textarea>
+                                <button class="copy-btn bg-slate-800 text-white px-3 py-2 rounded text-sm hover:bg-slate-700 whitespace-nowrap" data-copy="Host an audio discussion on the challenges of Omnichannel marketing. Discuss the difficulty of translating a long-form strategic email into the tight constraints of an SMS alert.">Copy</button>
+                            </div>
+                        </div>
+                        <div>
+                            <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">📖 Tier Review Guide</span>
+                            <div class="flex flex-col sm:flex-row items-start gap-2 mt-2">
+                                <textarea readonly class="w-full bg-slate-50 border border-slate-200 rounded p-3 text-sm text-slate-700 h-20 resize-none font-mono">Provide a comprehensive Master Overview of Elite Operations, detailing why deliverability engineering is the most critical skill for high-level email marketers.</textarea>
+                                <button class="copy-btn bg-slate-800 text-white px-3 py-2 rounded text-sm hover:bg-slate-700 whitespace-nowrap" data-copy="Provide a comprehensive Master Overview of Elite Operations, detailing why deliverability engineering is the most critical skill for high-level email marketers.">Copy</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+            </div>
+            
+            <div class="text-center mt-12">
+                <button class="nav-switch-btn bg-indigo-600 text-white px-8 py-4 rounded-xl font-bold shadow-md hover:bg-indigo-700 transition-colors" data-target="view-career">
+                    View Career Trajectory ➔
+                </button>
+            </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- VIEW 5: CAREER TRAJECTORY -->
+        <!-- ========================================== -->
+        <div id="view-career" class="app-view">
+            <div class="mb-10">
+                <h2 class="text-4xl font-black text-slate-800 mb-3">Career & Mastery Trajectory</h2>
+                <p class="text-lg text-slate-600">The roadmap to "Elite" status. Understand the ROI of your upskilling, the time required, and the earning potential.</p>
+            </div>
+
+            <!-- Transformation Matrix -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-10">
+                <div class="bg-slate-800 text-white px-6 py-4">
+                    <h3 class="text-xl font-bold">The Professional Transformation</h3>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-slate-200">
+                    <div class="p-6 bg-slate-50">
+                        <h4 class="font-bold text-slate-500 uppercase tracking-wider mb-4 flex items-center gap-2"><span>⏳</span> Pre-AI Executor (Current)</h4>
+                        <ul class="space-y-3 text-sm text-slate-700">
+                            <li class="flex items-start gap-2"><span class="text-slate-400 mt-0.5">✖</span> Manual CSV uploads and static Eloqua segments.</li>
+                            <li class="flex items-start gap-2"><span class="text-slate-400 mt-0.5">✖</span> Reliance on external teams for copy/design delays deployment.</li>
+                            <li class="flex items-start gap-2"><span class="text-slate-400 mt-0.5">✖</span> "Writer's Block" and slow A/B test generation.</li>
+                            <li class="flex items-start gap-2"><span class="text-slate-400 mt-0.5">✖</span> Vulnerable to replacement by automated software.</li>
+                        </ul>
+                    </div>
+                    <div class="p-6 bg-indigo-50">
+                        <h4 class="font-bold text-indigo-700 uppercase tracking-wider mb-4 flex items-center gap-2"><span>🚀</span> AI-Empowered Architect (Future)</h4>
+                        <ul class="space-y-3 text-sm text-indigo-900">
+                            <li class="flex items-start gap-2"><span class="text-indigo-500 mt-0.5">✔</span> Designs predictive, behavior-based trigger automation.</li>
+                            <li class="flex items-start gap-2"><span class="text-indigo-500 mt-0.5">✔</span> Uses NotebookLM as a personal QA and Compliance department.</li>
+                            <li class="flex items-start gap-2"><span class="text-indigo-500 mt-0.5">✔</span> Generates infinite, targeted copy variations instantly via APIs.</li>
+                            <li class="flex items-start gap-2 font-bold"><span class="text-indigo-500 mt-0.5">✔</span> Irreplaceable strategic asset driving measurable ROI.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Salary Progression Table -->
+            <h3 class="text-2xl font-bold text-slate-800 mb-4">Milestone Compensation Matrix</h3>
+            <p class="text-sm text-slate-600 mb-6">Estimated US base salaries reflecting the value of mastering specific roadmap tiers.</p>
+            <div class="overflow-x-auto bg-white rounded-xl shadow-sm border border-slate-200 mb-10">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-slate-100 text-slate-600 text-xs uppercase tracking-wider">
+                            <th class="p-4 font-bold border-b border-slate-200">Milestone</th>
+                            <th class="p-4 font-bold border-b border-slate-200">Expected Job Title</th>
+                            <th class="p-4 font-bold border-b border-slate-200">Core Competency</th>
+                            <th class="p-4 font-bold border-b border-slate-200">Pay Range (Est.)</th>
+                        </tr>
+                    </thead>
+                    <tbody class="text-sm text-slate-700 divide-y divide-slate-100">
+                        <tr>
+                            <td class="p-4 whitespace-nowrap"><span class="inline-block w-3 h-3 rounded-full bg-green-500 mr-2"></span> <span class="inline-block w-3 h-3 rounded-full bg-yellow-400 mr-2"></span> L1 - L2</td>
+                            <td class="p-4 font-medium text-slate-900">Email Marketing Coordinator</td>
+                            <td class="p-4">CRM Navigation, Basic AI Copy Generation</td>
+                            <td class="p-4 font-mono text-green-700">$60k - $75k</td>
+                        </tr>
+                        <tr>
+                            <td class="p-4 whitespace-nowrap"><span class="inline-block w-3 h-3 rounded-full bg-orange-500 mr-2"></span> <span class="inline-block w-3 h-3 rounded-full bg-purple-500 mr-2"></span> L3 - L4</td>
+                            <td class="p-4 font-medium text-slate-900">Marketing Automation Manager</td>
+                            <td class="p-4">Zapier Integrations, Deep Data LLM Analysis</td>
+                            <td class="p-4 font-mono text-green-700">$85k - $105k</td>
+                        </tr>
+                        <tr>
+                            <td class="p-4 whitespace-nowrap"><span class="inline-block w-3 h-3 rounded-full bg-red-600 mr-2"></span> <span class="inline-block w-3 h-3 rounded-full bg-blue-600 mr-2"></span> L5 - L6</td>
+                            <td class="p-4 font-medium text-slate-900">Senior Lifecycle Marketing Strategist</td>
+                            <td class="p-4">Cognitive Prompting, API Webhooks, Churn Prediction</td>
+                            <td class="p-4 font-mono text-green-700 font-bold">$115k - $140k</td>
+                        </tr>
+                        <tr class="bg-slate-50">
+                            <td class="p-4 whitespace-nowrap"><span class="inline-block w-3 h-3 rounded-full bg-slate-900 mr-2"></span> L7 (Elite)</td>
+                            <td class="p-4 font-bold text-slate-900">Director of Marketing Operations</td>
+                            <td class="p-4 font-medium">Omnichannel Architecture, Deliverability Engineering</td>
+                            <td class="p-4 font-mono text-green-700 font-black text-lg">$150k - $185k+</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <!-- Practice Regimen -->
+                <div>
+                    <h3 class="text-2xl font-bold text-slate-800 mb-4">The Elite Practice Regimen</h3>
+                    <p class="text-sm text-slate-600 mb-4">AI is an extension of your professional self. Like a muscle, prompt engineering degrades without consistent exercise.</p>
+                    <div class="space-y-3">
+                        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex items-center gap-4">
+                            <div class="bg-indigo-100 text-indigo-700 p-3 rounded-lg font-bold">1 Hr</div>
+                            <div>
+                                <p class="font-bold text-slate-800 text-sm">Daily (Ideation)</p>
+                                <p class="text-xs text-slate-500">Reading AI marketing newsletters; testing 3 new "Zero-Shot" prompts in Gemini.</p>
+                            </div>
+                        </div>
+                        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex items-center gap-4">
+                            <div class="bg-indigo-100 text-indigo-700 p-3 rounded-lg font-bold">5 Hrs</div>
+                            <div>
+                                <p class="font-bold text-slate-800 text-sm">Weekly (Execution)</p>
+                                <p class="text-xs text-slate-500">Building workflows in the HubSpot Sandbox; iterating on the DREAM framework.</p>
+                            </div>
+                        </div>
+                        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 flex items-center gap-4">
+                            <div class="bg-indigo-100 text-indigo-700 p-3 rounded-lg font-bold">15 Hrs</div>
+                            <div>
+                                <p class="font-bold text-slate-800 text-sm">Monthly (Synthesis)</p>
+                                <p class="text-xs text-slate-500">Deep Data analysis exercises; executing Enterprise Lab Scenarios (L6).</p>
+                            </div>
+                        </div>
+                        <div class="bg-indigo-600 p-4 rounded-xl shadow-sm flex items-center gap-4 text-white">
+                            <div class="bg-indigo-800 text-indigo-100 p-3 rounded-lg font-bold">250+</div>
+                            <div>
+                                <p class="font-bold text-sm">Hours / Year (Mastery)</p>
+                                <p class="text-xs text-indigo-200">The time required to bridge the gap from "Displaced Novice" to "Irreplaceable Elite".</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Beyond L7 -->
+                <div>
+                    <h3 class="text-2xl font-bold text-slate-800 mb-4">Beyond L7: The Elite Arsenal</h3>
+                    <p class="text-sm text-slate-600 mb-4">To reach the absolute pinnacle of operations, these are the tools and labs to conquer after finishing the roadmap.</p>
+                    
+                    <ul class="space-y-4">
+                        <li class="bg-white p-5 rounded-xl shadow-sm border-l-4 border-slate-800">
+                            <h4 class="font-bold text-slate-800 text-sm mb-1 flex items-center gap-2"><span>🏆</span> Advanced Data Warehousing</h4>
+                            <p class="text-xs text-slate-600"><strong>Tools:</strong> Snowflake, Google BigQuery.</p>
+                            <p class="text-xs text-slate-500 mt-1"><strong>Future Lab:</strong> Connecting a CRM directly to a data warehouse to run SQL queries assisted entirely by Gemini Advanced.</p>
+                        </li>
+                        <li class="bg-white p-5 rounded-xl shadow-sm border-l-4 border-slate-800">
+                            <h4 class="font-bold text-slate-800 text-sm mb-1 flex items-center gap-2"><span>🏆</span> Programmatic SMS & Webhooks</h4>
+                            <p class="text-xs text-slate-600"><strong>Tools:</strong> Twilio, SendGrid APIs.</p>
+                            <p class="text-xs text-slate-500 mt-1"><strong>Future Lab:</strong> Bypassing the CRM entirely to fire transactional SMS messages via custom JSON payloads written by AI.</p>
+                        </li>
+                        <li class="bg-white p-5 rounded-xl shadow-sm border-l-4 border-slate-800">
+                            <h4 class="font-bold text-slate-800 text-sm mb-1 flex items-center gap-2"><span>🏆</span> "Python for Marketers"</h4>
+                            <p class="text-xs text-slate-600"><strong>Concept:</strong> Basic scripting.</p>
+                            <p class="text-xs text-slate-500 mt-1"><strong>Future Lab:</strong> Using AI to write simple Python scripts that automatically clean and format messy CSV data before uploading to a CRM.</p>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <div class="text-center mt-12">
+                <button class="nav-switch-btn bg-indigo-600 text-white px-8 py-4 rounded-xl font-bold shadow-md hover:bg-indigo-700 transition-colors" data-target="view-glossary">
+                    Proceed to Technical Glossary ➔
+                </button>
+            </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- VIEW 6: GLOSSARY (NEW) -->
+        <!-- ========================================== -->
+        <div id="view-glossary" class="app-view">
+            <div class="mb-10">
+                <h2 class="text-4xl font-black text-slate-800 mb-3">AI & Technical Glossary</h2>
+                <p class="text-lg text-slate-600">A decoded dictionary of the acronyms and terms used throughout your training journey.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- AI Terms -->
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div class="bg-indigo-50 border-b border-indigo-100 px-6 py-4">
+                        <h3 class="font-bold text-indigo-900 text-lg">Artificial Intelligence Terms</h3>
+                    </div>
+                    <div class="p-6 space-y-6">
+                        <div>
+                            <div class="flex items-center gap-2 mb-2">
+                                <span class="bg-indigo-600 text-white font-bold px-2 py-1 rounded text-xs tracking-wider">LLM</span>
+                                <h4 class="font-bold text-slate-800">Large Language Model</h4>
+                            </div>
+                            <p class="text-sm text-slate-600"><strong>Purpose:</strong> The core "brain" of tools like Gemini.<br><strong>Impact:</strong> It understands and generates human-like text, allowing you to write copy or analyze data simply by "talking" to it.</p>
+                        </div>
+                        <div class="border-t border-slate-100 pt-4">
+                            <div class="flex items-center gap-2 mb-2">
+                                <span class="bg-indigo-600 text-white font-bold px-2 py-1 rounded text-xs tracking-wider">CoT</span>
+                                <h4 class="font-bold text-slate-800">Chain-of-Thought</h4>
+                            </div>
+                            <p class="text-sm text-slate-600"><strong>Purpose:</strong> A prompt engineering technique that forces the AI to explain its reasoning step-by-step before giving an answer.<br><strong>Impact:</strong> Crucial for L5 mastery; it stops the AI from hallucinating when doing complex data math.</p>
+                        </div>
+                        <div class="border-t border-slate-100 pt-4">
+                            <div class="flex items-center gap-2 mb-2">
+                                <span class="bg-indigo-600 text-white font-bold px-2 py-1 rounded text-xs tracking-wider">DREAM</span>
+                                <h4 class="font-bold text-slate-800">Describe, Refine, Establish, Add, Make</h4>
+                            </div>
+                            <p class="text-sm text-slate-600"><strong>Purpose:</strong> A foundational structural framework for writing robust prompts.<br><strong>Impact:</strong> Ensures every output generated matches your corporate brand guidelines perfectly.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Marketing/CRM Terms -->
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                    <div class="bg-emerald-50 border-b border-emerald-100 px-6 py-4">
+                        <h3 class="font-bold text-emerald-900 text-lg">Marketing & Architecture Terms</h3>
+                    </div>
+                    <div class="p-6 space-y-6">
+                        <div>
+                            <div class="flex items-center gap-2 mb-2">
+                                <span class="bg-emerald-600 text-white font-bold px-2 py-1 rounded text-xs tracking-wider">CRM</span>
+                                <h4 class="font-bold text-slate-800">Customer Relationship Management</h4>
+                            </div>
+                            <p class="text-sm text-slate-600"><strong>Purpose:</strong> Software like HubSpot or Klaviyo that stores contact data.<br><strong>Impact:</strong> It is the "engine" of your marketing where the AI's generated copy is actually deployed and automated.</p>
+                        </div>
+                        <div class="border-t border-slate-100 pt-4">
+                            <div class="flex items-center gap-2 mb-2">
+                                <span class="bg-emerald-600 text-white font-bold px-2 py-1 rounded text-xs tracking-wider">API</span>
+                                <h4 class="font-bold text-slate-800">Application Programming Interface</h4>
+                            </div>
+                            <p class="text-sm text-slate-600"><strong>Purpose:</strong> The invisible bridge that allows two different software platforms (like HubSpot and Google Sheets) to talk to each other.<br><strong>Impact:</strong> Essential for L6/L7; mastering APIs makes you an indispensable automation architect.</p>
+                        </div>
+                        <div class="border-t border-slate-100 pt-4">
+                            <div class="flex items-center gap-2 mb-2">
+                                <span class="bg-emerald-600 text-white font-bold px-2 py-1 rounded text-xs tracking-wider">LTV</span>
+                                <h4 class="font-bold text-slate-800">Lifetime Value</h4>
+                            </div>
+                            <p class="text-sm text-slate-600"><strong>Purpose:</strong> A predictive metric estimating how much money a single customer will spend with your brand over their life.<br><strong>Impact:</strong> Used in advanced segmentation to ensure you only send expensive "Win-Back" offers to high-value targets.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Technical/Deliverability Terms -->
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden md:col-span-2">
+                    <div class="bg-slate-800 border-b border-slate-900 px-6 py-4">
+                        <h3 class="font-bold text-white text-lg">Elite Deliverability Engineering (L7)</h3>
+                    </div>
+                    <div class="p-6 grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div>
+                            <div class="flex items-center gap-2 mb-2">
+                                <span class="bg-slate-900 text-white font-bold px-2 py-1 rounded text-xs tracking-wider">SPF</span>
+                                <h4 class="font-bold text-slate-800">Sender Policy Framework</h4>
+                            </div>
+                            <p class="text-sm text-slate-600">Like a "Guest List" for your domain. It tells internet providers (like Gmail) which servers are officially allowed to send emails on your behalf.</p>
+                        </div>
+                        <div>
+                            <div class="flex items-center gap-2 mb-2">
+                                <span class="bg-slate-900 text-white font-bold px-2 py-1 rounded text-xs tracking-wider">DKIM</span>
+                                <h4 class="font-bold text-slate-800">DomainKeys Identified Mail</h4>
+                            </div>
+                            <p class="text-sm text-slate-600">Like a "Wax Seal" on an envelope. It adds a cryptographic signature to your emails, proving to Gmail that the message wasn't intercepted and altered by hackers.</p>
+                        </div>
+                        <div>
+                            <div class="flex items-center gap-2 mb-2">
+                                <span class="bg-slate-900 text-white font-bold px-2 py-1 rounded text-xs tracking-wider">DMARC</span>
+                                <h4 class="font-bold text-slate-800">Domain-based Message Auth...</h4>
+                            </div>
+                            <p class="text-sm text-slate-600">The "Bouncer" at the club. It uses SPF and DKIM to verify the email. If it fails, DMARC tells the receiving server whether to Reject or Quarantine.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="text-center mt-12">
+                <button class="nav-switch-btn bg-indigo-600 text-white px-8 py-4 rounded-xl font-bold shadow-md hover:bg-indigo-700 transition-colors" data-target="view-resources">
+                    Proceed to Elite Library ➔
+                </button>
+            </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- VIEW 7: RESOURCES & LIBRARY (NEW) -->
+        <!-- ========================================== -->
+        <div id="view-resources" class="app-view">
+            <div class="mb-10">
+                <h2 class="text-4xl font-black text-slate-800 mb-3">The Elite Library</h2>
+                <p class="text-lg text-slate-600">Recommended books, video topics, and industry leaders to guide your path from L1 to L7.</p>
+            </div>
+
+            <!-- YouTube Search Mappings -->
+            <h3 class="text-2xl font-bold text-slate-800 mb-4">Targeted YouTube Curriculum</h3>
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden mb-10">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-slate-50 text-slate-500 text-xs uppercase tracking-wider">
+                            <th class="p-4 font-bold border-b border-slate-200 w-1/4">Roadmap Level</th>
+                            <th class="p-4 font-bold border-b border-slate-200">Recommended YouTube Search Queries</th>
+                        </tr>
+                    </thead>
+                    <tbody class="text-sm text-slate-700 divide-y divide-slate-100">
+                        <tr>
+                            <td class="p-4 font-semibold text-green-700">L1 & L2 (Foundations)</td>
+                            <td class="p-4">
+                                <ul class="list-disc pl-5 space-y-1">
+                                    <li>"HubSpot Workflows tutorial for beginners"</li>
+                                    <li>"How to use NotebookLM for studying documents"</li>
+                                    <li>"Active Lists vs Static Lists in HubSpot CRM"</li>
+                                </ul>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="p-4 font-semibold text-purple-700">L3 & L4 (Architecture)</td>
+                            <td class="p-4">
+                                <ul class="list-disc pl-5 space-y-1">
+                                    <li>"Zapier webhook tutorial connect APIs"</li>
+                                    <li>"How to upload and analyze CSV data in Gemini Advanced"</li>
+                                    <li>"n8n beginner automation crash course"</li>
+                                </ul>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="p-4 font-semibold text-red-700">L5 (Prompting)</td>
+                            <td class="p-4">
+                                <ul class="list-disc pl-5 space-y-1">
+                                    <li>"Chain of Thought prompting explained"</li>
+                                    <li>"How to use Few-Shot prompting for copywriting"</li>
+                                    <li>"Advanced LLM structural formatting"</li>
+                                </ul>
+                            </td>
+                        </tr>
+                        <tr class="bg-slate-50">
+                            <td class="p-4 font-semibold text-slate-900">L6 & L7 (Elite Ops)</td>
+                            <td class="p-4">
+                                <ul class="list-disc pl-5 space-y-1">
+                                    <li>"SPF DKIM DMARC explained simply visually"</li>
+                                    <li>"Klaviyo predictive analytics and churn risk tutorial"</li>
+                                    <li>"Omnichannel marketing strategy SMS and Email"</li>
+                                </ul>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <!-- Recommended Books -->
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                    <h3 class="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2"><span>📚</span> Mandatory Reading</h3>
+                    <ul class="space-y-4">
+                        <li class="border-b border-slate-100 pb-4">
+                            <h4 class="font-bold text-indigo-700">Email Marketing Rules</h4>
+                            <p class="text-xs text-slate-500 mb-1">By Chad S. White</p>
+                            <p class="text-sm text-slate-600">The definitive textbook for L1-L4. It covers the fundamental laws of strategy, list building, and anti-spam compliance.</p>
+                        </li>
+                        <li class="border-b border-slate-100 pb-4">
+                            <h4 class="font-bold text-indigo-700">Influence: The Psychology of Persuasion</h4>
+                            <p class="text-xs text-slate-500 mb-1">By Robert B. Cialdini</p>
+                            <p class="text-sm text-slate-600">Essential for L5 Prompting. You cannot prompt an AI to write persuasive, psychographic copy if you don't understand the psychology of human decision-making.</p>
+                        </li>
+                        <li>
+                            <h4 class="font-bold text-indigo-700">Automate Your Busywork</h4>
+                            <p class="text-xs text-slate-500 mb-1">By Aytekin Tank</p>
+                            <p class="text-sm text-slate-600">The mindset required for L6/L7. Teaches you how to stop being an "executor" and start thinking like an automation "architect."</p>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Thought Leaders -->
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                    <h3 class="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2"><span>🗣️</span> Industry Thought Leaders</h3>
+                    <p class="text-sm text-slate-600 mb-4">Follow these experts on LinkedIn or subscribe to their newsletters for daily L5/L7 insights.</p>
+                    <ul class="space-y-4">
+                        <li class="flex gap-4 items-start">
+                            <div class="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center font-bold text-indigo-700 shrink-0">CW</div>
+                            <div>
+                                <h4 class="font-bold text-slate-800 text-sm">Chad S. White</h4>
+                                <p class="text-xs font-semibold text-slate-500">Oracle / Deliverability</p>
+                                <p class="text-xs text-slate-600 mt-1">The undisputed king of email marketing strategy and strict deliverability (L7) compliance.</p>
+                            </div>
+                        </li>
+                        <li class="flex gap-4 items-start">
+                            <div class="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center font-bold text-indigo-700 shrink-0">JS</div>
+                            <div>
+                                <h4 class="font-bold text-slate-800 text-sm">Jay Schwedelson</h4>
+                                <p class="text-xs font-semibold text-slate-500">B2B Email Metrics</p>
+                                <p class="text-xs text-slate-600 mt-1">Excellent resource for B2B specific A/B testing data (L3) and subject line trends.</p>
+                            </div>
+                        </li>
+                        <li class="flex gap-4 items-start">
+                            <div class="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center font-bold text-indigo-700 shrink-0">AH</div>
+                            <div>
+                                <h4 class="font-bold text-slate-800 text-sm">Ann Handley</h4>
+                                <p class="text-xs font-semibold text-slate-500">MarketingProfs / Copywriting</p>
+                                <p class="text-xs text-slate-600 mt-1">Master of tone and brand voice. Study her newsletters to learn how to inject "Persona" (L5) into your AI prompts.</p>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="text-center mt-12">
+                <button class="nav-switch-btn bg-indigo-600 text-white px-8 py-4 rounded-xl font-bold shadow-md hover:bg-indigo-700 transition-colors" data-target="view-questions">
+                    Final Step: Strategy Questions ➔
+                </button>
+            </div>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- VIEW 8: STRATEGY QUESTIONS -->
+        <!-- ========================================== -->
+        <div id="view-questions" class="app-view">
+            <div class="mb-10">
+                <h2 class="text-4xl font-black text-slate-800 mb-3">Strategy Customization</h2>
+                <p class="text-lg text-slate-600">Answer these to further refine the curriculum labs.</p>
+            </div>
+            <div class="bg-white p-8 rounded-2xl shadow-sm border border-slate-200 max-w-3xl">
+                <ul class="space-y-6">
+                    <li class="flex gap-4 p-4 bg-slate-50 rounded-xl border border-slate-100">
+                        <div class="text-2xl mt-1">🎯</div>
+                        <div>
+                            <h4 class="font-bold text-slate-800 mb-1">1. Target Industry Post-AI</h4>
+                            <p class="text-sm text-slate-600">Does she want to stay in B2B Pharmaceuticals, pivot to B2C E-commerce, or work at a Marketing Agency?</p>
+                        </div>
+                    </li>
+                    <li class="flex gap-4 p-4 bg-slate-50 rounded-xl border border-slate-100">
+                        <div class="text-2xl mt-1">📁</div>
+                        <div>
+                            <h4 class="font-bold text-slate-800 mb-1">2. Past Asset Availability</h4>
+                            <p class="text-sm text-slate-600">Does she have access to sanitized data (click-through rates, subject lines) from her previous job for NotebookLM?</p>
+                        </div>
+                    </li>
+                    <li class="flex gap-4 p-4 bg-slate-50 rounded-xl border border-slate-100">
+                        <div class="text-2xl mt-1">🚧</div>
+                        <div>
+                            <h4 class="font-bold text-slate-800 mb-1">3. Technical Anxiety Levels</h4>
+                            <p class="text-sm text-slate-600">Is she intimidated by data analytics (Excel/CSV math) or the creative writing aspect?</p>
+                        </div>
+                    </li>
+                    <li class="flex gap-4 p-4 bg-slate-50 rounded-xl border border-slate-100">
+                        <div class="text-2xl mt-1">💼</div>
+                        <div>
+                            <h4 class="font-bold text-slate-800 mb-1">4. Portfolio Presentation</h4>
+                            <p class="text-sm text-slate-600">How does she plan to present this new knowledge to employers?</p>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            
+            // --- 1. SPA Navigation Logic ---
+            const navBtns = document.querySelectorAll('.nav-btn, .sub-nav-btn, .nav-switch-btn');
+            const views = document.querySelectorAll('.app-view');
+            const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('mobile-overlay');
+
+            function switchView(targetId) {
+                // Change View
+                views.forEach(v => v.classList.remove('active-view'));
+                const targetView = document.getElementById(targetId);
+                if(targetView) targetView.classList.add('active-view');
+                
+                // Update Main Menu Active State
+                document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+                const matchingNav = document.querySelector(`.nav-btn[data-target="${targetId}"]`);
+                if(matchingNav) matchingNav.classList.add('active');
+
+                // Close Mobile Menu
+                if (window.innerWidth < 1024) {
+                    sidebar.classList.add('-translate-x-full');
+                    overlay.classList.remove('opacity-100');
+                    setTimeout(() => overlay.classList.add('hidden'), 300);
+                }
+            }
+
+            navBtns.forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const targetView = e.currentTarget.getAttribute('data-target');
+                    const scrollTarget = e.currentTarget.getAttribute('data-scroll');
+                    
+                    switchView(targetView);
+                    
+                    if (scrollTarget) {
+                        setTimeout(() => {
+                            const el = document.getElementById(scrollTarget);
+                            if (el) {
+                                // Scroll handling for fixed mobile header
+                                const y = el.getBoundingClientRect().top + window.pageYOffset - 80;
+                                window.scrollTo({top: y, behavior: 'smooth'});
+                            }
+                        }, 100);
+                    } else {
+                        window.scrollTo(0, 0);
+                    }
+                });
+            });
+
+            // Mobile Menu Toggle
+            function toggleMenu() {
+                const isOpen = !sidebar.classList.contains('-translate-x-full');
+                if (isOpen) {
+                    sidebar.classList.add('-translate-x-full');
+                    overlay.classList.remove('opacity-100');
+                    setTimeout(() => overlay.classList.add('hidden'), 300);
+                } else {
+                    overlay.classList.remove('hidden');
+                    // slight delay to allow display:block to apply before transition
+                    setTimeout(() => overlay.classList.add('opacity-100'), 10);
+                    sidebar.classList.remove('-translate-x-full');
+                }
+            }
+
+            mobileMenuBtn.addEventListener('click', toggleMenu);
+            overlay.addEventListener('click', toggleMenu);
+
+
+            // --- 2. Charts Setup ---
+            const progressCtx = document.getElementById('progressChart').getContext('2d');
+            const progressChart = new Chart(progressCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Completed', 'Remaining'],
+                    datasets: [{
+                        data: [0, 100],
+                        backgroundColor: ['#4f46e5', '#e2e8f0'],
+                        borderWidth: 0,
+                        cutout: '75%'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false }, tooltip: { enabled: false } },
+                    animation: { animateScale: true }
+                },
+                plugins: [{
+                    id: 'textCenter',
+                    beforeDraw: function(chart) {
+                        var width = chart.width, height = chart.height, ctx = chart.ctx;
+                        ctx.restore();
+                        var fontSize = (height / 100).toFixed(2);
+                        ctx.font = "bold " + fontSize + "em sans-serif";
+                        ctx.textBaseline = "middle";
+                        ctx.fillStyle = "#1e293b";
+                        var text = chart.data.datasets[0].data[0] + "%",
+                            textX = Math.round((width - ctx.measureText(text).width) / 2),
+                            textY = height / 2;
+                        ctx.fillText(text, textX, textY);
+                        ctx.save();
+                    }
+                }]
+            });
+
+            const radarCtx = document.getElementById('radarChart').getContext('2d');
+            new Chart(radarCtx, {
+                type: 'radar',
+                data: {
+                    labels: ['Prompt Engineering', 'Automation/API', 'Dynamic Copywriting', 'Data Synthesis', 'Predictive Analysis', 'Deliverability'],
+                    datasets: [{
+                        label: 'Pre-AI Skillset (Manual)',
+                        data: [10, 20, 30, 40, 5, 10],
+                        fill: true,
+                        backgroundColor: 'rgba(148, 163, 184, 0.2)',
+                        borderColor: 'rgba(148, 163, 184, 1)',
+                        pointBackgroundColor: 'rgba(148, 163, 184, 1)'
+                    }, {
+                        label: 'Post-Curriculum Expert Goal',
+                        data: [95, 90, 85, 90, 85, 80],
+                        fill: true,
+                        backgroundColor: 'rgba(79, 70, 229, 0.2)',
+                        borderColor: 'rgba(79, 70, 229, 1)',
+                        pointBackgroundColor: 'rgba(79, 70, 229, 1)'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        r: {
+                            angleLines: { color: 'rgba(0,0,0,0.05)' },
+                            grid: { color: 'rgba(0,0,0,0.05)' },
+                            pointLabels: { font: { size: 10, family: 'sans-serif', weight: 'bold' }, color: '#475569' },
+                            ticks: { display: false, min: 0, max: 100 }
+                        }
+                    },
+                    plugins: {
+                        legend: { position: 'bottom', labels: { boxWidth: 12, font: {size: 11} } }
+                    }
+                }
+            });
+
+
+            // --- 3. Roadmap & Copy Interactions ---
+            
+            function updateProgress() {
+                let globalTotal = 0;
+                let globalCompleted = 0;
+
+                const phases = [1, 2, 3, 4, 5, 6, 7];
+                phases.forEach(p => {
+                    const checkboxes = document.querySelectorAll(`.step-checkbox[data-phase="phase${p}"]`);
+                    if(checkboxes.length === 0) return;
+                    
+                    let phaseCompleted = 0;
+                    checkboxes.forEach(cb => {
+                        globalTotal++;
+                        if (cb.checked) {
+                            phaseCompleted++;
+                            globalCompleted++;
+                            cb.closest('.step-card').classList.add('completed');
+                        } else {
+                            cb.closest('.step-card').classList.remove('completed');
+                        }
+                    });
+                    
+                    const pct = Math.round((phaseCompleted / checkboxes.length) * 100);
+                    // Update sidebar badges for this phase
+                    const badges = document.querySelectorAll(`.progress-badge[data-phase="phase${p}"]`);
+                    badges.forEach(badge => {
+                        badge.innerText = `${pct}%`;
+                        if(pct === 100) {
+                            badge.classList.add('bg-emerald-100', 'text-emerald-700');
+                            badge.classList.remove('bg-slate-100', 'text-slate-500');
+                        } else {
+                            badge.classList.remove('bg-emerald-100', 'text-emerald-700');
+                            badge.classList.add('bg-slate-100', 'text-slate-500');
+                        }
+                    });
+                });
+
+                const globalPct = globalTotal === 0 ? 0 : Math.round((globalCompleted / globalTotal) * 100);
+                progressChart.data.datasets[0].data = [globalPct, 100 - globalPct];
+                progressChart.update();
+                
+                const mobileText = document.getElementById('mobile-progress-text');
+                if(mobileText) mobileText.innerText = globalPct;
+            }
+
+            // Init listeners for all checkboxes
+            document.querySelectorAll('.step-checkbox').forEach(cb => { 
+                cb.addEventListener('change', updateProgress); 
+            });
+
+            // Accordions
+            const labButtons = document.querySelectorAll('.lab-btn');
+            labButtons.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const content = this.nextElementSibling;
+                    const icon = this.querySelector('span:last-child');
+                    content.classList.toggle('open');
+                    if (content.classList.contains('open')) {
+                        icon.style.transform = 'rotate(-180deg)';
+                    } else {
+                        icon.style.transform = 'rotate(0deg)';
+                    }
+                });
+            });
+
+            // Copy Buttons
+            const copyButtons = document.querySelectorAll('.copy-btn');
+            copyButtons.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const tempTextArea = document.createElement('textarea');
+                    tempTextArea.innerHTML = this.getAttribute('data-copy');
+                    navigator.clipboard.writeText(tempTextArea.value).then(() => {
+                        const originalText = this.innerText;
+                        this.innerText = 'Copied!';
+                        this.classList.add('copied');
+                        setTimeout(() => {
+                            this.innerText = originalText;
+                            this.classList.remove('copied');
+                        }, 2000);
+                    });
+                });
+            });
+
+        });
+    </script>
+</body>
+</html>
